@@ -1,0 +1,63 @@
+[project]
+name = "useful-tools"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[tool.pytest.ini_options]
+pythonpath = ["source"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 150
+
+[tool.ruff.lint]
+select = [
+    # pycodestyle error
+    "E",
+    # pyflakes
+    "F",
+    # isort
+    "I",
+    # pycodestyle warning
+    "W",
+]
+ignore = [
+    # is-literal
+    "F632",
+    # bare-except
+    "E722",
+    # lambda-assignment
+    "E731",
+]
+fixable = ["ALL"]
+
+[tool.ruff.format]
+# keep quotes intact
+quote-style = "preserve"
+
+[dependency-groups]
+dev = [
+    "clipboard>=0.0.4",
+    "comtypes>=1.4.11",
+    "cryptography>=45.0.5",
+    "feedparser>=6.0.11",
+    "httpx>=0.28.1",
+    "ipykernel>=6.29.5",
+    "jupyter>=1.1.1",
+    "markitdown[all]>=0.1.2",
+    "numpy>=2.2.6",
+    "pandas>=2.2.3",
+    "pillow>=11.3.0",
+    "pip>=25.1.1",
+    "pyinstaller>=6.14.0",
+    "pypdf>=5.6.0",
+    "pypdfium2>=4.30.0",
+    "pyside6>=6.9.1",
+    "pytest>=8.4.0",
+    "ruff>=0.11.12",
+    "tabulate>=0.9.0",
+    "ty>=0.0.1a20",
+]
