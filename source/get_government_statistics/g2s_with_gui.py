@@ -401,12 +401,12 @@ class MainApp_Of_G2S(QMainWindow):
                 raise
             # QScrollArea
             if isinstance(widget, QScrollArea):
-                inner: QWidget = widget.takeWidget()
-                if inner:
+                inner: QWidget | None = widget.takeWidget()
+                if inner is not None:
                     inner.deleteLater()
             else:
                 layout: QLayout | None = widget.layout()
-                if layout:
+                if layout is not None:
                     self._clear_layout(layout)
         except Exception:
             raise
@@ -421,14 +421,15 @@ class MainApp_Of_G2S(QMainWindow):
         result: bool = False
         try:
             while layout.count():
-                item: QLayoutItem = layout.takeAt(0)
-                child_widget: QWidget | None = item.widget()
-                if child_widget:
-                    child_widget.deleteLater()
-                    continue
-                child_layout: QLayout = item.layout()
-                if child_layout:
-                    self._clear_layout(child_layout)
+                item: QLayoutItem | None = layout.takeAt(0)
+                if item is not None:
+                    child_widget: QWidget | None = item.widget()
+                    if child_widget is not None:
+                        child_widget.deleteLater()
+                    else:
+                        child_layout: QLayout | None = item.layout()
+                        if child_layout is not None:
+                            self._clear_layout(child_layout)
         except Exception:
             raise
         else:
