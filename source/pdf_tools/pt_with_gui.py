@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
     QLabel,
+    QLayoutItem,
     QLineEdit,
     QMainWindow,
     QMessageBox,
@@ -294,9 +295,11 @@ class MainApp_Of_PT(QMainWindow):
         try:
             # 既存のレイアウトをクリア（再表示に対応）
             for i in reversed(range(self.center_container_layout.count())):
-                widget: QWidget | None = self.center_container_layout.itemAt(i).widget()
-                if widget is not None:
-                    widget.setParent(None)
+                item: QLayoutItem | None = self.center_container_layout.itemAt(i)
+                if item is not None:
+                    widget: QWidget | None = item.widget()
+                    if widget is not None:
+                        widget.setParent(None)
             if not images:
                 raise Exception("PDFファイルの各ページの画像がありません。")
             # 各ページを表示する
