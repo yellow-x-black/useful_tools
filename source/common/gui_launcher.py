@@ -87,6 +87,11 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
                     description=ConvertToMd.__doc__,
                 ),
                 LauncherItem(
+                    title="source/edit_pdf",
+                    callback=self.launch_ep,
+                    description=EditPdf.__doc__,
+                ),
+                LauncherItem(
                     title="source/get_file_list",
                     callback=self.launch_gfl,
                     description=GetFileList.__doc__,
@@ -95,11 +100,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
                     title="source/get_japan_government_statistics",
                     callback=self.launch_gjgs,
                     description=GetJapanGovernmentStatistics.__doc__,
-                ),
-                LauncherItem(
-                    title="source/edit_pdf",
-                    callback=self.launch_ep,
-                    description=EditPdf.__doc__,
                 ),
             ]
             for item in launcher_items:
@@ -163,6 +163,21 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
             pass
         return result
 
+    def launch_ep(self) -> bool:
+        result: bool = False
+        try:
+            from source.edit_pdf.ep_with_gui import MainApp_Of_EP, create_window
+
+            self.ep_window: MainApp_Of_EP = create_window()
+            self.ep_window.show()
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
+
     def launch_gfl(self) -> bool:
         result: bool = False
         try:
@@ -185,21 +200,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
 
             self.gjgs_window: MainApp_Of_GJGS = create_window()
             self.gjgs_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_ep(self) -> bool:
-        result: bool = False
-        try:
-            from source.edit_pdf.ep_with_gui import MainApp_Of_EP, create_window
-
-            self.ep_window: MainApp_Of_EP = create_window()
-            self.ep_window.show()
         except Exception:
             raise
         else:

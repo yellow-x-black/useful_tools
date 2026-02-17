@@ -43,12 +43,12 @@ def run_with_cui(tool: str) -> bool:
                 from source.convert_office_to_pdf.cotp_with_cui import main
             case "ctm":
                 from source.convert_to_md.ctm_with_cui import main
+            case "ep":
+                from source.edit_pdf.ep_with_cui import main
             case "gfl":
                 from source.get_file_list.gfl_with_cui import main
             case "gjgs":
                 from source.get_japan_government_statistics.gjgs_with_cui import main
-            case "ep":
-                from source.edit_pdf.ep_with_cui import main
             case _:
                 raise
         obj = main()
@@ -78,12 +78,12 @@ def run_with_gui(tool: str) -> bool:
                 from source.convert_office_to_pdf.cotp_with_gui import main
             case "ctm":
                 from source.convert_to_md.ctm_with_gui import main
+            case "ep":
+                from source.edit_pdf.ep_with_gui import main
             case "gfl":
                 from source.get_file_list.gfl_with_gui import main
             case "gjgs":
                 from source.get_japan_government_statistics.gjgs_with_gui import main
-            case "ep":
-                from source.edit_pdf.ep_with_gui import main
             case _:
                 raise
         main()
