@@ -119,7 +119,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_cltp(self) -> bool:
-        """CLTP"""
         result: bool = False
         try:
             from source.convert_libre_to_pdf.cltp_with_gui import MainApp_Of_CLTP, create_window
@@ -135,7 +134,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_cotp(self) -> bool:
-        """COTP"""
         result: bool = False
         try:
             from source.convert_office_to_pdf.cotp_with_gui import MainApp_Of_COTP, create_window
@@ -151,7 +149,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_ctm(self) -> bool:
-        """CTM"""
         result: bool = False
         try:
             from source.convert_to_md.ctm_with_gui import MainApp_Of_CTM, create_window
@@ -167,7 +164,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_gfl(self) -> bool:
-        """GFL"""
         result: bool = False
         try:
             from source.get_file_list.gfl_with_gui import MainApp_Of_GFL, create_window
@@ -183,7 +179,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_g2s(self) -> bool:
-        """G2S"""
         result: bool = False
         try:
             from source.get_government_statistics.g2s_with_gui import MainApp_Of_G2S, create_window
@@ -199,7 +194,6 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         return result
 
     def launch_ep(self) -> bool:
-        """EP"""
         result: bool = False
         try:
             from source.edit_pdf.ep_with_gui import MainApp_Of_EP, create_window
