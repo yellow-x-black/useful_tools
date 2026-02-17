@@ -5,10 +5,10 @@ from pathlib import Path
 from typing import Any
 
 from source.common.common import DatetimeTools, LogTools
-from source.get_government_statistics.g2s_class import GetGovernmentStatistics
+from source.get_japan_government_statistics.gjgs_class import GetJapanGovernmentStatistics
 
 
-class GS_With_Cui:
+class GJGS_With_Cui:
     def __init__(self):
         """初期化します"""
         self.binary_choices: dict = {
@@ -166,8 +166,8 @@ async def main() -> bool:
     finally:
         pass
     # 処理の本体部分
-    obj_with_cui: GS_With_Cui = GS_With_Cui()
-    obj_of_cls: GetGovernmentStatistics = GetGovernmentStatistics(obj_of_lt.logger)
+    obj_with_cui: GJGS_With_Cui = GJGS_With_Cui()
+    obj_of_cls: GetJapanGovernmentStatistics = GetJapanGovernmentStatistics(obj_of_lt.logger)
     while True:
         try:
             obj_of_cls.APP_ID = obj_with_cui._input_app_id()

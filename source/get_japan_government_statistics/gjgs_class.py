@@ -18,7 +18,7 @@ from tabulate import tabulate
 from source.common.common import DatetimeTools
 
 
-class GetGovernmentStatistics:
+class GetJapanGovernmentStatistics:
     """
     日本政府の統計データを取得します
     """

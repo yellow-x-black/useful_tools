@@ -31,7 +31,7 @@ from PySide6.QtWidgets import (
 )
 
 from source.common.common import DatetimeTools, GUITools, LogTools
-from source.get_government_statistics.g2s_class import GetGovernmentStatistics
+from source.get_japan_government_statistics.gjgs_class import GetJapanGovernmentStatistics
 
 
 class GetIdsWorker(QObject):
@@ -88,12 +88,12 @@ class QTextEditHandler(logging.Handler):
         self.emitter.log_signal.emit(msg)
 
 
-class MainApp_Of_G2S(QMainWindow):
+class MainApp_Of_GJGS(QMainWindow):
     def __init__(self):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
-        self.obj_of_cls: GetGovernmentStatistics = GetGovernmentStatistics(self.obj_of_lt.logger)
+        self.obj_of_cls: GetJapanGovernmentStatistics = GetJapanGovernmentStatistics(self.obj_of_lt.logger)
         self._setup_first_ui()
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self._setup_log()
@@ -659,8 +659,8 @@ class MainApp_Of_G2S(QMainWindow):
         return result
 
 
-def create_window() -> MainApp_Of_G2S:
-    window: MainApp_Of_G2S = MainApp_Of_G2S()
+def create_window() -> MainApp_Of_GJGS:
+    window: MainApp_Of_GJGS = MainApp_Of_GJGS()
     window.resize(1000, 800)
     # 最大化して、表示させる
     window.showMaximized()

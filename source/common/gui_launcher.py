@@ -20,7 +20,7 @@ from source.convert_office_to_pdf.cotp_class import ConvertOfficeToPDF
 from source.convert_to_md.ctm_class import ConvertToMd
 from source.edit_pdf.ep_class import EditPdf
 from source.get_file_list.gfl_class import GetFileList
-from source.get_government_statistics.g2s_class import GetGovernmentStatistics
+from source.get_japan_government_statistics.gjgs_class import GetJapanGovernmentStatistics
 
 
 @dataclass
@@ -92,9 +92,9 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
                     description=GetFileList.__doc__,
                 ),
                 LauncherItem(
-                    title="source/get_government_statistics",
-                    callback=self.launch_g2s,
-                    description=GetGovernmentStatistics.__doc__,
+                    title="source/get_japan_government_statistics",
+                    callback=self.launch_gjgs,
+                    description=GetJapanGovernmentStatistics.__doc__,
                 ),
                 LauncherItem(
                     title="source/edit_pdf",
@@ -178,13 +178,13 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
             pass
         return result
 
-    def launch_g2s(self) -> bool:
+    def launch_gjgs(self) -> bool:
         result: bool = False
         try:
-            from source.get_government_statistics.g2s_with_gui import MainApp_Of_G2S, create_window
+            from source.get_japan_government_statistics.gjgs_with_gui import MainApp_Of_GJGS, create_window
 
-            self.g2s_window: MainApp_Of_G2S = create_window()
-            self.g2s_window.show()
+            self.gjgs_window: MainApp_Of_GJGS = create_window()
+            self.gjgs_window.show()
         except Exception:
             raise
         else:
