@@ -16,7 +16,7 @@
 > ![icon](https://res.cloudinary.com/yellow-x-black/image/upload/v1771309720/icon_of_ep_bjhcth.svg)
 ### get_japan_government_statistics(GJGS)
 * You can get and see japan government statistics.
-> ![icon](https://res.cloudinary.com/yellow-x-black/image/upload/v1771313270/icon_of_gjgs_b2aheu.svg)
+> ![icon](https://res.cloudinary.com/yellow-x-black/image/upload/v1771314696/icon_of_gjgs_ax7mww.svg)
 ### convert_to_md(CTM)
 * You can convert to Markdown files.
 > ![icon](https://res.cloudinary.com/yellow-x-black/image/upload/v1766019905/icon_of_ctm_w0rtpf.svg)
