@@ -19,7 +19,9 @@ from source.common.common import DatetimeTools
 
 
 class GetGovernmentStatistics:
-    """政府の統計データを取得します"""
+    """
+    日本政府の統計データを取得します
+    """
 
     def __init__(self, logger: Logger):
         """初期化します"""

@@ -7,7 +7,7 @@ from markitdown import MarkItDown
 
 class ConvertToMd:
     """
-    markdownに一括変換します
+    指定のファイルをmarkdownファイルに変換します
     """
 
     def __init__(self, logger: Logger):

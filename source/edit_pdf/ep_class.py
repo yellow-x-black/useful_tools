@@ -8,7 +8,9 @@ from source.common.common import DatetimeTools
 
 
 class EditPdf:
-    """PDFを編集します"""
+    """
+    PDFファイルを編集します
+    """
 
     def __init__(self, logger: Logger):
         """初期化します"""
