@@ -1,6 +1,6 @@
 import pytest
 
-from source.pdf_tools import pt_with_cui
+from source.edit_pdf import ep_with_cui
 
 
 # テスト関数: 指定されている関数の動作を確認するためのテストをする
@@ -9,6 +9,6 @@ def test_func(monkeypatch):
     def fake_loop():
         raise KeyboardInterrupt
 
-    monkeypatch.setattr("source.pdf_tools.pt_with_cui.main", fake_loop)
+    monkeypatch.setattr("source.edit_pdf.ep_with_cui.main", fake_loop)
     with pytest.raises(KeyboardInterrupt):
-        pt_with_cui.main()
+        ep_with_cui.main()

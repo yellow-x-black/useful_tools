@@ -4,7 +4,7 @@ from enum import Enum
 from pathlib import Path
 
 from source.common.common import DatetimeTools, LogTools
-from source.pdf_tools.pt_class import PdfTools
+from source.edit_pdf.ep_class import EditPdf
 
 
 class MENU(Enum):
@@ -35,7 +35,7 @@ class DEGREES(Enum):
         return list(cls)[index]
 
 
-class PT_With_Cui:
+class EP_With_Cui:
     def __init__(self):
         """初期化します"""
         self.binary_choices: dict = {
@@ -136,7 +136,7 @@ class PT_With_Cui:
                 pass
         return pw
 
-    def _input_writing_metadata(self, obj_of_cls: PdfTools) -> dict:
+    def _input_writing_metadata(self, obj_of_cls: EditPdf) -> dict:
         """書き込み用のメタデータを入力します"""
         while True:
             try:
@@ -279,8 +279,8 @@ def main() -> bool:
     finally:
         pass
     # 処理の本体部分
-    obj_with_cui = PT_With_Cui()
-    obj_of_cls = PdfTools(obj_of_lt.logger)
+    obj_with_cui = EP_With_Cui()
+    obj_of_cls = EditPdf(obj_of_lt.logger)
     while True:
         result: bool = False
         try:

@@ -7,8 +7,8 @@ from pypdf import DocumentInformation, PdfReader, PdfWriter
 from source.common.common import DatetimeTools
 
 
-class PdfTools:
-    """PDFを扱うツール"""
+class EditPdf:
+    """PDFを編集します"""
 
     def __init__(self, logger: Logger):
         """初期化します"""

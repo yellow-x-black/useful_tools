@@ -47,8 +47,8 @@ def run_with_cui(tool: str) -> bool:
                 from source.get_file_list.gfl_with_cui import main
             case "g2s":
                 from source.get_government_statistics.g2s_with_cui import main
-            case "pt":
-                from source.pdf_tools.pt_with_cui import main
+            case "ep":
+                from source.edit_pdf.ep_with_cui import main
             case _:
                 raise
         obj = main()
@@ -82,8 +82,8 @@ def run_with_gui(tool: str) -> bool:
                 from source.get_file_list.gfl_with_gui import main
             case "g2s":
                 from source.get_government_statistics.g2s_with_gui import main
-            case "pt":
-                from source.pdf_tools.pt_with_gui import main
+            case "ep":
+                from source.edit_pdf.ep_with_gui import main
             case _:
                 raise
         main()

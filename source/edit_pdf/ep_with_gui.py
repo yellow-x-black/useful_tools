@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 )
 
 from source.common.common import DatetimeTools, GUITools, LogTools
-from source.pdf_tools.pt_class import PdfTools
+from source.edit_pdf.ep_class import EditPdf
 
 
 class LogEmitter(QObject):
@@ -46,12 +46,12 @@ class QTextEditHandler(logging.Handler):
         self.emitter.log_signal.emit(msg)
 
 
-class MainApp_Of_PT(QMainWindow):
+class MainApp_Of_EP(QMainWindow):
     def __init__(self):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
-        self.obj_of_cls: PdfTools = PdfTools(self.obj_of_lt.logger)
+        self.obj_of_cls: EditPdf = EditPdf(self.obj_of_lt.logger)
         self._setup_first_ui()
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self._setup_log()
@@ -569,8 +569,8 @@ class MainApp_Of_PT(QMainWindow):
         return result
 
 
-def create_window() -> MainApp_Of_PT:
-    window: MainApp_Of_PT = MainApp_Of_PT()
+def create_window() -> MainApp_Of_EP:
+    window: MainApp_Of_EP = MainApp_Of_EP()
     window.resize(1000, 800)
     # 最大化して、表示させる
     window.showMaximized()

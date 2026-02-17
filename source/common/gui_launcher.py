@@ -18,9 +18,9 @@ from source.common.common import GUITools
 from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
 from source.convert_office_to_pdf.cotp_class import ConvertOfficeToPDF
 from source.convert_to_md.ctm_class import ConvertToMd
+from source.edit_pdf.ep_class import EditPdf
 from source.get_file_list.gfl_class import GetFileList
 from source.get_government_statistics.g2s_class import GetGovernmentStatistics
-from source.pdf_tools.pt_class import PdfTools
 
 
 @dataclass
@@ -97,9 +97,9 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
                     description=GetGovernmentStatistics.__doc__,
                 ),
                 LauncherItem(
-                    title="source/pdf_tools",
-                    callback=self.launch_pt,
-                    description=PdfTools.__doc__,
+                    title="source/edit_pdf",
+                    callback=self.launch_ep,
+                    description=EditPdf.__doc__,
                 ),
             ]
             for item in launcher_items:
@@ -198,14 +198,14 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
             pass
         return result
 
-    def launch_pt(self) -> bool:
-        """PT"""
+    def launch_ep(self) -> bool:
+        """EP"""
         result: bool = False
         try:
-            from source.pdf_tools.pt_with_gui import MainApp_Of_PT, create_window
+            from source.edit_pdf.ep_with_gui import MainApp_Of_EP, create_window
 
-            self.pt_window: MainApp_Of_PT = create_window()
-            self.pt_window.show()
+            self.ep_window: MainApp_Of_EP = create_window()
+            self.ep_window.show()
         except Exception:
             raise
         else:
