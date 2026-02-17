@@ -75,7 +75,7 @@ class EditPdf:
         return result
 
     def encrypt(self, password: str) -> bool:
-        """暗号化します"""
+        """ファイルを暗号化します"""
         result: bool = False
         try:
             self.log.info(f"対象のファイルパス: {self.file_path}")
@@ -96,7 +96,7 @@ class EditPdf:
         return result
 
     def decrypt(self, password: str) -> bool:
-        """復号化します"""
+        """ファイルを復号化します"""
         result: bool = False
         try:
             self.log.info(f"対象のファイルパス: {self.file_path}")
@@ -154,7 +154,7 @@ class EditPdf:
         return result
 
     def merge(self, pdfs: list) -> bool:
-        """マージします"""
+        """ファイルをマージします"""
         result: bool = False
         try:
             # ファイルパスを退避させる
