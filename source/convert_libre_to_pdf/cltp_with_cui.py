@@ -1,9 +1,7 @@
-import shutil
 import sys
 from pathlib import Path
 
 from source.common.common import DatetimeTools, LogTools
-from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
 
 
 class CLTP_With_Cui:
@@ -90,9 +88,9 @@ def main() -> bool:
         pass
     # エラーチェック
     try:
-        LIBRE_COMMAND: str = "soffice"
-        if not shutil.which(LIBRE_COMMAND):
-            raise ImportError(f"LibreOfficeをインストールして、{LIBRE_COMMAND}コマンドのパスを通してください。: \nhttps://ja.libreoffice.org/")
+        from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
+
+        obj_of_cls: ConvertLibreToPDF = ConvertLibreToPDF(obj_of_lt.logger)
     except ImportError as e:
         print(f"error: \n{str(e)}")
         return result
@@ -102,7 +100,6 @@ def main() -> bool:
         pass
     # 処理の本体部分
     obj_with_cui: CLTP_With_Cui = CLTP_With_Cui()
-    obj_of_cls: ConvertLibreToPDF = ConvertLibreToPDF(obj_of_lt.logger)
     while True:
         result = False
         try:

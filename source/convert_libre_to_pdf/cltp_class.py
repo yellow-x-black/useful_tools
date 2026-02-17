@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 from logging import Logger
 from pathlib import Path
@@ -11,6 +12,10 @@ class ConvertLibreToPDF:
 
     def __init__(self, logger: Logger):
         """初期化します"""
+        self.command: str = "soffice"
+        # コマンドのパスが通っているか確認する
+        if not shutil.which(self.command):
+            raise ImportError(f"LibreOfficeをインストールして、{self.command}コマンドのパスを通してください。: \nhttps://ja.libreoffice.org/")
         self.log: Logger = logger
         self.log.info(self.__class__.__doc__)
         # 拡張子の辞書
@@ -118,7 +123,7 @@ class ConvertLibreToPDF:
             self.log.info(f"* [{self.count + 1} / {self.number_of_f}] {self.convert_file.__doc__}: ")
             self.log.info(f"{self.current_file_path_from} => PDF")
             convert_obj: subprocess.CompletedProcess = subprocess.run(
-                ["soffice", "--headless", "--convert-to", "pdf", "--outdir", self.folder_path_to, self.current_file_path_from],
+                [self.command, "--headless", "--convert-to", "pdf", "--outdir", self.folder_path_to, self.current_file_path_from],
                 capture_output=True,
                 text=True,
             )

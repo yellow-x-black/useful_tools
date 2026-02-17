@@ -1,9 +1,9 @@
 import logging
 import platform
-import shutil
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 from PySide6.QtGui import QFont
@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
 )
 
 from source.common.common import DatetimeTools, GUITools, LogTools, PlatformTools
-from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
 
 
 class LogEmitter(QObject):
@@ -46,11 +45,11 @@ class QTextEditHandler(logging.Handler):
 
 
 class MainApp_Of_CLTP(QMainWindow):
-    def __init__(self):
+    def __init__(self, obj_of_cls: Any):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
-        self.obj_of_cls: ConvertLibreToPDF = ConvertLibreToPDF(self.obj_of_lt.logger)
+        self.obj_of_cls: Any = obj_of_cls(self.obj_of_lt.logger)
         self._setup_ui()
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self.obj_of_pft: PlatformTools = PlatformTools()
@@ -286,10 +285,10 @@ class MainApp_Of_CLTP(QMainWindow):
 
 def create_window() -> MainApp_Of_CLTP:
     # エラーチェック
-    LIBRE_COMMAND: str = "soffice"
-    if not shutil.which(LIBRE_COMMAND):
-        raise ImportError("LibreOfficeをインストールして、sofficeコマンドのパスを通してください。。: \nhttps://ja.libreoffice.org/")
-    window: MainApp_Of_CLTP = MainApp_Of_CLTP()
+    from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
+
+    window: MainApp_Of_CLTP = MainApp_Of_CLTP(ConvertLibreToPDF)
+
     window.resize(1000, 800)
     # 最大化して、表示させる
     window.showMaximized()
