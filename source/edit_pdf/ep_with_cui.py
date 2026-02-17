@@ -1,13 +1,14 @@
 import re
 import sys
-from enum import Enum
+from enum import IntEnum, StrEnum
 from pathlib import Path
+from typing import Self
 
 from source.common.common import DatetimeTools, LogTools
 from source.edit_pdf.ep_class import EditPdf
 
 
-class MENU(Enum):
+class MENU(StrEnum):
     encrypt_file = "ファイルを暗号化します"
     decrypt_file = "ファイルを復号化します"
     print_metadata = "メタデータを出力します"
@@ -19,18 +20,18 @@ class MENU(Enum):
     rotate_page = "ページを時計回りで回転します"
 
     @classmethod
-    def by_index(cls, index: int):
+    def by_index(cls, index: int) -> Self:
         # インデックスで指定したクラスメンバーを返す
         return list(cls)[index]
 
 
-class DEGREES(Enum):
+class DEGREES(IntEnum):
     ninety = 90
     one_hundred_eighty = 180
     two_hundred_seventy = 270
 
     @classmethod
-    def by_index(cls, index: int):
+    def by_index(cls, index: int) -> Self:
         # インデックスで指定したクラスメンバーを返す
         return list(cls)[index]
 
