@@ -115,7 +115,7 @@ class MainApp_Of_CLTP(QMainWindow):
         result: bool = False
         try:
             # タイトル
-            self.setWindowTitle("Officeファイル => PDF 一括変換アプリ with LibreOffice")
+            self.setWindowTitle("Officeファイル => PDFファイル 一括変換アプリ with LibreOffice")
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             base_layout: QVBoxLayout = QVBoxLayout(central)

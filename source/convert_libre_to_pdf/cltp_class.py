@@ -6,7 +6,7 @@ from pathlib import Path
 
 class ConvertLibreToPDF:
     """
-    オフィスファイルをPDFファイルに変換します
+    OfficeファイルをPDFファイルに変換します
     LibreOfficeが必要です
     """
 
