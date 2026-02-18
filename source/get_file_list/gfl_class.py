@@ -4,7 +4,7 @@ from pathlib import Path
 
 class GetFileList:
     """
-    指定のフォルダ内のファイルのリストを取得します
+    指定のフォルダ内のファイルリストを取得します
     """
 
     def __init__(self, logger: Logger):

@@ -115,7 +115,7 @@ class MainApp_Of_GFL(QMainWindow):
         result: bool = False
         try:
             # タイトル
-            self.setWindowTitle("ファイル検索アプリ")
+            self.setWindowTitle("フォルダ内ファイルリスト表示アプリ")
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             base_layout: QVBoxLayout = QVBoxLayout(central)
