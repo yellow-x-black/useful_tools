@@ -124,7 +124,7 @@ class MainApp_Of_EP(QMainWindow):
         result: bool = False
         try:
             # タイトル
-            self.setWindowTitle("PDF編集アプリ")
+            self.setWindowTitle("PDFファイル編集アプリ")
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             base_layout: QVBoxLayout = QVBoxLayout(central)
