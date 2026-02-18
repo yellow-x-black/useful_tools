@@ -2,7 +2,7 @@ import sys
 from dataclasses import dataclass
 from typing import Callable
 
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
     QLabel,
@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from source.common.common import GUITools
+from source.common.common import GUITools, PlatformTools
 from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
 from source.convert_office_to_pdf.cotp_class import ConvertOfficeToPDF
 from source.convert_to_md.ctm_class import ConvertToMd
@@ -214,9 +214,16 @@ def main() -> bool:
     result: bool = False
     try:
         obj_of_gt: GUITools = GUITools()
+        obj_of_pft: PlatformTools = PlatformTools()
         app: QApplication = QApplication(sys.argv)
         # アプリ単位でフォントを設定する
-        font: QFont = QFont()
+        if obj_of_pft._is_wsl():
+            font_path: str = "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
+            font_id: int = QFontDatabase.addApplicationFont(font_path)
+            font_family: str = QFontDatabase.applicationFontFamilies(font_id)[0]
+            font: QFont = QFont(font_family)
+        else:
+            font: QFont = QFont()
         font.setPointSize(12)
         app.setFont(font)
         window: MainApp_Of_Gui_Launcher = MainApp_Of_Gui_Launcher()

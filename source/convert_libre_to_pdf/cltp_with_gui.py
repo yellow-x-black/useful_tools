@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
@@ -300,9 +300,16 @@ def main() -> bool:
     result: bool = False
     try:
         obj_of_gt: GUITools = GUITools()
+        obj_of_pft: PlatformTools = PlatformTools()
         app: QApplication = QApplication(sys.argv)
         # アプリ単位でフォントを設定する
-        font: QFont = QFont()
+        if obj_of_pft._is_wsl():
+            font_path: str = "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
+            font_id: int = QFontDatabase.addApplicationFont(font_path)
+            font_family: str = QFontDatabase.applicationFontFamilies(font_id)[0]
+            font: QFont = QFont(font_family)
+        else:
+            font: QFont = QFont()
         font.setPointSize(12)
         app.setFont(font)
         create_window()
