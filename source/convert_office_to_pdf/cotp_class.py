@@ -7,7 +7,7 @@ from comtypes.client import CreateObject
 
 class ConvertOfficeToPDF:
     """
-    オフィスファイルをPDFファイルに変換します
+    OfficeファイルをPDFファイルに変換します
     Windows + Microsoft Office(デスクトップ版)が必要です
     """
 
