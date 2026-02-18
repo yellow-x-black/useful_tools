@@ -158,7 +158,7 @@ class MainApp_Of_GJGS(QMainWindow):
         result: bool = False
         try:
             # タイトル
-            self.setWindowTitle("政府統計表示アプリ")
+            self.setWindowTitle("日本政府統計表示アプリ")
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             # 主要
