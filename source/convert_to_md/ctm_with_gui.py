@@ -115,7 +115,7 @@ class MainApp_Of_CTM(QMainWindow):
         result: bool = False
         try:
             # タイトル
-            self.setWindowTitle("指定のファイル => Markdown 一括変換アプリ")
+            self.setWindowTitle("指定のファイル => Markdownファイル 一括変換アプリ")
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             base_layout: QVBoxLayout = QVBoxLayout(central)
