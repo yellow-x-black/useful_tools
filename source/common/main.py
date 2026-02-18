@@ -107,16 +107,19 @@ def main() -> bool:
             EXCLUDE: list = ["__pycache__", "common"]
             return {p.name: make_shortname_of_tools(p.name) for p in base_path.iterdir() if p.is_dir() and p.name not in EXCLUDE}
 
-        print("\nusage: ")
-        usage_lst: tuple = (
+        print("\nUsage: ")
+        usage_tpl: tuple = (
             "main.py => GUI Launcher",
             "main.py cui <tool_name> => CUI",
             "main.py gui <tool_name> => GUI",
         )
-        print("\n".join(usage_lst))
-        print("\ntools list: ")
+        print("\n".join(usage_tpl))
+        print("\nTools List: ")
         tools_dct: dict = get_dct_from_tools_dir("source")
         print("\n".join(f"{key} => {value}" for key, value in tools_dct.items()))
+        print("\nAttention: ")
+        attention_tpl: tuple = ("If you execute with GUI mode on WSL2(Ubuntu), execute the following command.", "sudo apt install fonts-ipafont")
+        print("\n".join(attention_tpl))
 
     result: bool = False
     try:
