@@ -6,8 +6,27 @@ import uuid
 from logging import FileHandler, Formatter, Logger, StreamHandler
 from typing import Any
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, SignalInstance
 from PySide6.QtWidgets import QMessageBox, QWidget
+
+
+class QtSignalLogHandler(logging.Handler):
+    """QtのSignalへログを転送するためのハンドラのクラス"""
+
+    def __init__(self, signal: SignalInstance):
+        super().__init__()
+        self.signal: SignalInstance = signal
+
+    def emit(self, record: logging.LogRecord):
+        try:
+            msg: str = self.format(record)
+            self.signal.emit(msg)
+        except Exception:
+            pass
+        else:
+            pass
+        finally:
+            pass
 
 
 class LogTools:
@@ -32,8 +51,8 @@ class LogTools:
         try:
             self.file_handler: FileHandler = logging.FileHandler(file_path, mode="w", encoding="utf-8")
             self.file_handler.setLevel(logging.INFO)
-            self.STR_OF_FILE_FORMATTER: str = "%(message)s - [%(levelname)s] - (%(filename)s) - %(asctime)s"
-            self.file_formatter: Formatter = logging.Formatter(self.STR_OF_FILE_FORMATTER)
+            self.str_of_file_formatter: str = "%(message)s - [%(levelname)s] - (%(filename)s) - %(asctime)s"
+            self.file_formatter: Formatter = logging.Formatter(self.str_of_file_formatter)
             self.file_handler.setFormatter(self.file_formatter)
             self.logger.addHandler(self.file_handler)
         except Exception:
@@ -50,10 +69,28 @@ class LogTools:
         try:
             self.stream_handler: StreamHandler = logging.StreamHandler(sys.stdout)
             self.stream_handler.setLevel(logging.INFO)
-            self.STR_OF_STREAM_FORMATTER: str = "%(message)s"
-            self.stream_formatter: Formatter = logging.Formatter(self.STR_OF_STREAM_FORMATTER)
+            self.str_of_stream_formatter: str = "%(message)s"
+            self.stream_formatter: Formatter = logging.Formatter(self.str_of_stream_formatter)
             self.stream_handler.setFormatter(self.stream_formatter)
             self.logger.addHandler(self.stream_handler)
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
+
+    def _setup_qt_signal_handler(self, log: SignalInstance) -> bool:
+        """QtのSignalにログを流すハンドラを設定します"""
+        result: bool = False
+        try:
+            self.qt_signal_handler: QtSignalLogHandler = QtSignalLogHandler(log)
+            self.qt_signal_handler.setLevel(logging.INFO)
+            self.str_of_qt_signal_formatter: str = "%(message)s"
+            self.qt_signal_formatter: Formatter = logging.Formatter(self.str_of_qt_signal_formatter)
+            self.qt_signal_handler.setFormatter(self.qt_signal_formatter)
+            self.logger.addHandler(self.qt_signal_handler)
         except Exception:
             raise
         else:
