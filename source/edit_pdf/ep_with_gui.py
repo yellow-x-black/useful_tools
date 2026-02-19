@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 import pypdfium2
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QDir, QObject, Qt, Signal
 from PySide6.QtGui import QFont, QFontDatabase, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -107,10 +107,11 @@ class MainApp_Of_EP(QMainWindow):
             self.obj_of_lt.file_path_of_log = str(file_p)
             self.obj_of_lt._setup_file_handler(self.obj_of_lt.file_path_of_log)
             self.log_emitter: LogEmitter = LogEmitter()
-            self.log_emitter.log_signal.connect(self.log_area.append)
+            self.log_emitter.log_signal.connect(self.log_area.append, Qt.ConnectionType.QueuedConnection)
             text_handler: QTextEditHandler = QTextEditHandler(self.log_emitter)
             text_handler.setFormatter(self.obj_of_lt.file_formatter)
             self.obj_of_lt.logger.addHandler(text_handler)
+            self.obj_of_lt.logger.propagate = False
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -467,7 +468,7 @@ class MainApp_Of_EP(QMainWindow):
         """マージします"""
         result: bool = False
         try:
-            files, _ = QFileDialog.getOpenFileNames(self, caption="マージするPDFを選択", dir="", filter="PDF Files (*.pdf)")
+            files, _ = QFileDialog.getOpenFileNames(self, caption="マージするPDFを選択", dir=QDir.homePath(), filter="PDF Files (*.pdf)")
             if not files:
                 raise Exception("PDFファイルを選択してください。")
             # 各OSに応じたパス区切りに変換する
@@ -571,9 +572,6 @@ class MainApp_Of_EP(QMainWindow):
 
 def create_window() -> MainApp_Of_EP:
     window: MainApp_Of_EP = MainApp_Of_EP()
-    window.resize(1000, 800)
-    # 最大化して、表示させる
-    window.showMaximized()
     return window
 
 
@@ -594,7 +592,10 @@ def main() -> bool:
             font: QFont = QFont()
         font.setPointSize(12)
         app.setFont(font)
-        create_window()
+        window: MainApp_Of_EP = create_window()
+        window.resize(1000, 800)
+        # 最大化して、表示させる
+        window.showMaximized()
         sys.exit(app.exec())
     except Exception as e:
         obj_of_gt._show_start_up_error(f"error: \n{str(e)}")
