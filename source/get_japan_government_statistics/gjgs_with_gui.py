@@ -1,15 +1,16 @@
 import asyncio
-import csv
-import logging
 import re
 import sys
+from logging import Logger
 from pathlib import Path
-from typing import Any
+from threading import Event
 
 import httpx
 import pandas
-from PySide6.QtCore import QModelIndex, QObject, QThread, Signal
-from PySide6.QtGui import QFont, QStandardItem, QStandardItemModel
+from pandas import DataFrame
+from pandas.io.parsers import TextFileReader
+from PySide6.QtCore import QModelIndex, QObject, Qt, QThread, Signal, Slot
+from PySide6.QtGui import QFont, QFontDatabase, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -30,7 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from source.common.common import DatetimeTools, GUITools, LogTools
+from source.common.common import DatetimeTools, GUITools, LogTools, PlatformTools
 from source.get_japan_government_statistics.gjgs_class import GetJapanGovernmentStatistics
 
 
@@ -39,56 +40,61 @@ class GetIdsWorker(QObject):
 
     finished: Signal = Signal(bool)
     error: Signal = Signal(str)
+    log: Signal = Signal(str)
 
-    def __init__(self, obj_of_cls: Any):
+    def __init__(self, logger: Logger, APP_ID: str, lst_of_data_type: list, lst_of_get_type: list):
         """初期化します"""
         super().__init__()
-        self.obj_of_cls = obj_of_cls
+        self.cancel_event: Event = Event()
+        # 共有する
+        self.logger: Logger = logger
+        self.obj_of_cls: GetJapanGovernmentStatistics = GetJapanGovernmentStatistics(self.logger, self.cancel_event)
+        self.obj_of_cls.APP_ID = APP_ID
+        self.obj_of_cls.lst_of_data_type = lst_of_data_type
+        self.obj_of_cls.lst_of_get_type = lst_of_get_type
 
     def run(self):
         """実行します"""
         result: bool = False
+        loop: asyncio.AbstractEventLoop | None = None
         try:
-            loop: asyncio.AbstractEventLoop = asyncio.new_event_loop()
+            loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            loop.run_until_complete(self.obj_of_cls.write_stats_data_ids_to_file())
-        except httpx.HTTPStatusError as e:
-            self.error.emit(f"HTTPStatusError: \n{str(e)}")
-        except httpx.RequestError as e:
-            self.error.emit(f"RequestError: \n{str(e)}")
+            result = loop.run_until_complete(self.obj_of_cls.write_stats_data_ids_to_file())
+            if result:
+                self.logger.info("統計表IDの取得が完了しました。")
+            else:
+                self.logger.warning("統計表IDの取得がキャンセルされました。")
+        except asyncio.CancelledError:
+            result = False
+            self.logger.warning("処理がキャンセルされました。")
+        except httpx.HTTPStatusError:
+            self.logger.error("HTTPStatusError")
+            self.error.emit("HTTPStatusError")
+        except httpx.RequestError:
+            self.logger.error("RequestError")
+            self.error.emit("RequestError")
         except Exception as e:
+            self.logger.error(f"Exception: \n{str(e)}")
             self.error.emit(f"Exception: \n{str(e)}")
         else:
-            result = True
+            pass
         finally:
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.close()
+            if loop is not None:
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.close()
         self.finished.emit(result)
 
     def cancel(self):
         """キャンセルします"""
-        self.obj_of_cls.cancel = True
-
-
-class LogEmitter(QObject):
-    """loggingの出力をQtのSignalに変換し、GUIスレッドへ安全にログを伝達するためのクラス"""
-
-    log_signal: Signal = Signal(str)
-
-
-class QTextEditHandler(logging.Handler):
-    """QTextEditにログを流すためのハンドラ"""
-
-    def __init__(self, emitter: LogEmitter):
-        super().__init__()
-        self.emitter: LogEmitter = emitter
-
-    def emit(self, record: logging.LogRecord):
-        msg: str = self.format(record)
-        self.emitter.log_signal.emit(msg)
+        self.cancel_event.set()
 
 
 class MainApp_Of_GJGS(QMainWindow):
+    """GUIアプリ"""
+
+    log: Signal = Signal(str)
+
     def __init__(self):
         """初期化します"""
         super().__init__()
@@ -97,14 +103,13 @@ class MainApp_Of_GJGS(QMainWindow):
         self._setup_first_ui()
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self._setup_log()
+        self.worker_of_getting_ids: GetIdsWorker | None = None
+        self.thread_of_getting_ids: QThread | None = None
 
     def closeEvent(self, event):
         """終了します"""
         if self.obj_of_lt:
             self._show_info(f"ログファイルは、\n{self.obj_of_lt.file_path_of_log}\nに出力されました。")
-        for h in self.obj_of_lt.logger.handlers[:]:
-            if isinstance(h, QTextEditHandler):
-                self.obj_of_lt.logger.removeHandler(h)
         super().closeEvent(event)
 
     def _show_info(self, msg: str):
@@ -125,6 +130,11 @@ class MainApp_Of_GJGS(QMainWindow):
         QMessageBox.warning(self, "エラー", msg)
         self.obj_of_lt.logger.warning(msg)
 
+    @Slot(str)
+    def _append_log(self, msg: str):
+        """ログを追加します"""
+        self.log_area.append(msg)
+
     def _setup_log(self) -> bool:
         """ログを設定します"""
         result: bool = False
@@ -140,11 +150,9 @@ class MainApp_Of_GJGS(QMainWindow):
             file_p: Path = folder_p / file_name
             self.obj_of_lt.file_path_of_log = str(file_p)
             self.obj_of_lt._setup_file_handler(self.obj_of_lt.file_path_of_log)
-            self.log_emitter: LogEmitter = LogEmitter()
-            self.log_emitter.log_signal.connect(self.log_area.append)
-            text_handler: QTextEditHandler = QTextEditHandler(self.log_emitter)
-            text_handler.setFormatter(self.obj_of_lt.file_formatter)
-            self.obj_of_lt.logger.addHandler(text_handler)
+            self.obj_of_lt._setup_qt_signal_handler(self.log)
+            self.log.connect(self._append_log, Qt.ConnectionType.QueuedConnection)
+            self.obj_of_lt.logger.propagate = False
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -224,12 +232,12 @@ class MainApp_Of_GJGS(QMainWindow):
             self._get_get_type(0)
             func_area.addRow(QLabel("取得方法: "), self.get_type_combo)
             # 統計表IDの一覧を取得する
-            get_ids_btn: QPushButton = QPushButton("統計表IDの一覧を取得する")
-            get_ids_btn.clicked.connect(self.get_lst_of_ids)
+            self.get_ids_btn: QPushButton = QPushButton("統計表IDの一覧を取得する")
+            self.get_ids_btn.clicked.connect(self.get_lst_of_ids)
             # 統計表IDの一覧の取得をキャンセルする
-            cancel_getting_ids_btn: QPushButton = QPushButton("統計表IDの一覧の取得をキャンセルする")
-            cancel_getting_ids_btn.clicked.connect(self.cancel_getting_lst_of_ids)
-            func_area.addRow(get_ids_btn, cancel_getting_ids_btn)
+            self.cancel_getting_ids_btn: QPushButton = QPushButton("統計表IDの一覧の取得をキャンセルする")
+            self.cancel_getting_ids_btn.clicked.connect(self.cancel_getting_lst_of_ids)
+            func_area.addRow(self.get_ids_btn, self.cancel_getting_ids_btn)
             # 統計表IDの一覧を表示する
             show_ids_btn: QPushButton = QPushButton("統計表IDの一覧を表示する")
             func_area.addRow(show_ids_btn)
@@ -281,6 +289,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
         return result
 
+    @Slot(QModelIndex)
     def _get_id_from_lst(self, index: QModelIndex):
         """一覧から統計表IDを取得します"""
         try:
@@ -398,7 +407,7 @@ class MainApp_Of_GJGS(QMainWindow):
         result: bool = False
         try:
             if widget is None:
-                raise
+                raise Exception("Widget is None.")
             # QScrollArea
             if isinstance(widget, QScrollArea):
                 inner: QWidget | None = widget.takeWidget()
@@ -438,6 +447,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
         return result
 
+    @Slot()
     def _get_app_id(self):
         """アプリケーションIDを取得します"""
         try:
@@ -452,6 +462,7 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot(int)
     def _get_data_type(self, index: int):
         """データタイプを取得します"""
         try:
@@ -465,6 +476,7 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot(int)
     def _get_get_type(self, index: int):
         """取得方法を取得します"""
         try:
@@ -478,6 +490,7 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot(int)
     def _get_match_type(self, index: int):
         """検索方法を取得します"""
         try:
@@ -491,6 +504,7 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot(int)
     def _get_logic_type(self, index: int):
         """抽出方法を取得します"""
         try:
@@ -504,6 +518,7 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot()
     def _get_keyword(self):
         """キーワードを取得します"""
         try:
@@ -515,23 +530,58 @@ class MainApp_Of_GJGS(QMainWindow):
         finally:
             pass
 
+    @Slot(str)
+    def _show_error_on_getting_ids(self, error: str):
+        """統計表IDの一覧を取得する際のエラーを表示します"""
+        # 取得ボタンを有効化する
+        self.get_ids_btn.setEnabled(True)
+        self._show_error(error)
+
+    @Slot(bool)
+    def _show_result_after_getting_ids(self, flag: bool):
+        """統計表IDの一覧を取得した後の結果を表示します"""
+        # キャンセルボタンを無効化する
+        self.cancel_getting_ids_btn.setEnabled(False)
+        # 取得ボタンを有効化する
+        self.get_ids_btn.setEnabled(True)
+        self._show_result(self.get_lst_of_ids.__doc__, flag)
+
+    @Slot()
+    def _cleanup_after_getting_ids(self):
+        """統計表IDの一覧を取得した後にクリーンアップします"""
+        self.worker_of_getting_ids = None
+        self.thread_of_getting_ids = None
+
+    @Slot()
     def get_lst_of_ids(self) -> bool:
         """統計表IDの一覧を取得します"""
         result: bool = False
         try:
+            if self.thread_of_getting_ids is not None and self.thread_of_getting_ids.isRunning():
+                self._show_error("統計表IDの一覧を取得しています。")
+                raise
             self._check_first_form()
             # 取得方法は非同期のみ
             self.get_type_combo.setCurrentIndex(0)
-            self.worker: GetIdsWorker = GetIdsWorker(self.obj_of_cls)
-            self.thread: QThread = QThread()
-            self.worker.moveToThread(self.thread)
-            self.thread.started.connect(self.worker.run)
-            self.worker.finished.connect(self.thread.quit)
-            self.worker.finished.connect(self.worker.deleteLater)
-            self.thread.finished.connect(self.thread.deleteLater)
-            self.worker.error.connect(self._show_error)
-            self.worker.finished.connect(lambda ok: self._show_result(self.get_lst_of_ids.__doc__, ok))
-            self.thread.start()
+            self.worker_of_getting_ids = GetIdsWorker(
+                self.obj_of_lt.logger, self.obj_of_cls.APP_ID, self.obj_of_cls.lst_of_data_type, self.obj_of_cls.lst_of_get_type
+            )
+            self.thread_of_getting_ids = QThread()
+            self.worker_of_getting_ids.moveToThread(self.thread_of_getting_ids)
+            # キャンセルボタンを有効化する
+            self.cancel_getting_ids_btn.setEnabled(True)
+            # 取得ボタンを無効化する
+            self.get_ids_btn.setEnabled(False)
+            self.thread_of_getting_ids.started.connect(self.worker_of_getting_ids.run)
+            self.worker_of_getting_ids.log.connect(self._append_log, Qt.ConnectionType.QueuedConnection)
+            self.worker_of_getting_ids.finished.connect(self.thread_of_getting_ids.quit)
+            self.worker_of_getting_ids.error.connect(self.thread_of_getting_ids.quit)
+            self.worker_of_getting_ids.error.connect(self._show_error_on_getting_ids)
+            self.worker_of_getting_ids.finished.connect(self._show_result_after_getting_ids)
+            self.thread_of_getting_ids.finished.connect(self.worker_of_getting_ids.deleteLater)
+            self.thread_of_getting_ids.finished.connect(self.thread_of_getting_ids.deleteLater)
+            self.thread_of_getting_ids.finished.connect(self._cleanup_after_getting_ids)
+            self.thread_of_getting_ids.start()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -540,29 +590,29 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
         return result
 
+    @Slot()
     def cancel_getting_lst_of_ids(self):
         """統計表IDの一覧の取得をキャンセルします"""
-        if hasattr(self, "worker") and self.worker is not None:
-            self.worker.cancel()
+        if self.worker_of_getting_ids is not None:
+            self.worker_of_getting_ids.cancel()
+        # キャンセルボタンを無効化する
+        self.cancel_getting_ids_btn.setEnabled(False)
 
+    @Slot()
     def show_lst_of_ids(self) -> bool:
         """統計表IDの一覧を表示します"""
         result: bool = False
         try:
             self._clear_widget(self.top_left_scroll_area)
             self._setup_second_ui()
-            # 検索パターン
-            PATTERN: str = "*.csv"
-            csv_files = self.obj_of_cls.folder_p_of_ids.glob(PATTERN)
-            if not any(csv_files):
+            csv_files: list = list(self.obj_of_cls.folder_p_of_ids.glob("*.csv"))
+            if not csv_files:
                 raise Exception("統計表IDの一覧を取得してください。")
             for csv_file in csv_files:
-                with open(str(csv_file), newline="", encoding="utf-8") as f:
-                    reader = csv.reader(f)
-                    # ヘッダー行をスキップする
-                    next(reader, None)
-                    for row in reader:
-                        items: list = [QStandardItem(str(cell)) for cell in row]
+                reader: TextFileReader = pandas.read_csv(filepath_or_buffer=str(csv_file), chunksize=1, dtype=str)
+                for chunk in reader:
+                    for _, row in chunk.iterrows():
+                        items: list = [QStandardItem(str(v)) for v in row]
                         self.model.appendRow(items)
             self.lst_of_ids.resizeColumnsToContents()
         except Exception as e:
@@ -573,6 +623,7 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_result(self.show_lst_of_ids.__doc__, result)
         return result
 
+    @Slot()
     def filter_lst_of_ids(self) -> bool:
         """統計表IDの一覧をフィルターにかけます"""
         result: bool = False
@@ -580,17 +631,13 @@ class MainApp_Of_GJGS(QMainWindow):
             self._check_second_form()
             self._clear_widget(self.top_left_scroll_area)
             self._setup_second_ui()
-            # 検索パターン
-            PATTERN: str = "*.csv"
-            csv_files = self.obj_of_cls.folder_p_of_ids.glob(PATTERN)
-            if not any(csv_files):
+            csv_files: list = list(self.obj_of_cls.folder_p_of_ids.glob(pattern="*.csv"))
+            if not csv_files:
                 raise Exception("統計表IDの一覧を取得してください。")
             for csv_file in csv_files:
-                reader = pandas.read_csv(str(csv_file), chunksize=1, dtype=str)
-                # ヘッダー行をスキップする
-                next(reader, None)
+                reader: TextFileReader = pandas.read_csv(filepath_or_buffer=str(csv_file), chunksize=1, dtype=str)
                 for chunk in reader:
-                    df = self.obj_of_cls.filter_df(chunk)
+                    df: DataFrame = self.obj_of_cls.filter_df(chunk)
                     for _, row in df.iterrows():
                         items: list = [QStandardItem(str(v)) for v in row]
                         self.model.appendRow(items)
@@ -603,6 +650,7 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_result(self.filter_lst_of_ids.__doc__, result)
         return result
 
+    @Slot()
     def show_table(self) -> bool:
         """指定の統計表を表示します"""
         result: bool = False
@@ -624,6 +672,7 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_result(self.show_table.__doc__, result)
         return result
 
+    @Slot()
     def filter_table(self) -> bool:
         """指定の統計表をフィルターにかけます"""
         result: bool = False
@@ -643,6 +692,7 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_result(self.filter_table.__doc__, result)
         return result
 
+    @Slot()
     def output_table(self) -> bool:
         """指定の統計表をファイルに出力します"""
         result: bool = False
@@ -661,9 +711,6 @@ class MainApp_Of_GJGS(QMainWindow):
 
 def create_window() -> MainApp_Of_GJGS:
     window: MainApp_Of_GJGS = MainApp_Of_GJGS()
-    window.resize(1000, 800)
-    # 最大化して、表示させる
-    window.showMaximized()
     return window
 
 
@@ -672,12 +719,22 @@ def main() -> bool:
     result: bool = False
     try:
         obj_of_gt: GUITools = GUITools()
+        obj_of_pft: PlatformTools = PlatformTools()
         app: QApplication = QApplication(sys.argv)
         # アプリ単位でフォントを設定する
-        font: QFont = QFont()
+        if obj_of_pft._is_wsl():
+            font_path: str = "/usr/share/fonts/opentype/ipafont-gothic/ipag.ttf"
+            font_id: int = QFontDatabase.addApplicationFont(font_path)
+            font_family: str = QFontDatabase.applicationFontFamilies(font_id)[0]
+            font: QFont = QFont(font_family)
+        else:
+            font: QFont = QFont()
         font.setPointSize(12)
         app.setFont(font)
-        create_window()
+        window: MainApp_Of_GJGS = create_window()
+        window.resize(1000, 800)
+        # 最大化して、表示させる
+        window.showMaximized()
         sys.exit(app.exec())
     except Exception as e:
         obj_of_gt._show_start_up_error(f"error: \n{str(e)}")

@@ -1,15 +1,14 @@
 import asyncio
 import csv
 import io
-import json
 import shutil
 import sys
 from logging import Logger
 from pathlib import Path
+from threading import Event
 from typing import Any, AsyncGenerator
 from xml.etree import ElementTree
 
-import clipboard
 import httpx
 import pandas
 from pandas import DataFrame
@@ -23,7 +22,7 @@ class GetJapanGovernmentStatistics:
     日本政府の統計データを取得します
     """
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, cancel_event=None):
         """初期化します"""
         self.log: Logger = logger
         self.log.info(self.__class__.__doc__)
@@ -88,7 +87,7 @@ class GetJapanGovernmentStatistics:
         # 指定の統計表のデータフレーム
         self.df: DataFrame = None
         # 処理をキャンセルするかどうか
-        self.cancel: bool = False
+        self.cancel_event: Event | None = cancel_event
         # exe化されている場合とそれ以外を切り分ける
         exe_path: Path = Path(sys.executable) if getattr(sys, "frozen", False) else Path(__file__)
         # 統計表IDの一覧のCSVファイルを格納するフォルダ
@@ -119,7 +118,7 @@ class GetJapanGovernmentStatistics:
             raise
         except Exception:
             # デバッグ用(加工前のデータをクリップボードにコピーする)
-            clipboard.copy(res.text)
+            # clipboard.copy(res.text)
             raise
         else:
             pass
@@ -148,7 +147,7 @@ class GetJapanGovernmentStatistics:
             raise
         except Exception:
             # デバッグ用(加工前のデータをクリップボードにコピーする)
-            clipboard.copy(json.dumps(data, indent=4, ensure_ascii=False))
+            # clipboard.copy(json.dumps(data, indent=4, ensure_ascii=False))
             raise
         else:
             pass
@@ -185,7 +184,7 @@ class GetJapanGovernmentStatistics:
             raise
         except Exception:
             # デバッグ用(加工前のデータをクリップボードにコピーする)
-            clipboard.copy(res.text)
+            # clipboard.copy(res.text)
             raise
         else:
             pass
@@ -261,7 +260,7 @@ class GetJapanGovernmentStatistics:
         else:
             result = True
         finally:
-            self.cancel = False
+            pass
         return result
 
     def _common_process_for_writing_stats_data_ids_to_file(self, file_index: int, buffer: list) -> bool:
@@ -297,6 +296,8 @@ class GetJapanGovernmentStatistics:
             buffer: list = [self.header_of_ids_s]
             file_index: int = 1
             async for page in self._get_stats_data_ids_with_async():
+                if self.cancel_event and self.cancel_event.is_set():
+                    raise asyncio.CancelledError()
                 for stat_id, info in page.items():
                     col2: str = info.get("stat_name", info.get("statistics_name", ""))
                     col3: str = info.get("title", "")
@@ -309,12 +310,9 @@ class GetJapanGovernmentStatistics:
                         buffer.clear()
                         buffer.append(self.header_of_ids_s)
                         file_index += 1
-                if self.cancel:
-                    break
             if len(buffer) > 1:
                 self._common_process_for_writing_stats_data_ids_to_file(file_index, buffer)
         except asyncio.CancelledError:
-            self.cancel = True
             raise
         except httpx.HTTPStatusError:
             raise
@@ -325,7 +323,7 @@ class GetJapanGovernmentStatistics:
         else:
             result = True
         finally:
-            if self.cancel:
+            if self.cancel_event and self.cancel_event.is_set():
                 self.log.warning(f"{self._write_stats_data_ids_to_file_with_async.__doc__} => 中止しました。")
             elif result:
                 self.log.info(f"{self._write_stats_data_ids_to_file_with_async.__doc__} => 成功しました。")
@@ -399,7 +397,8 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 # デバッグ用(加工前のデータをクリップボードにコピーする)
-                clipboard.copy(res.text)
+                # clipboard.copy(res.text)
+                pass
             return df
 
         def _with_json(client: httpx.Client, dct_of_params: dict) -> DataFrame:
@@ -450,7 +449,8 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 # デバッグ用(加工前のデータをクリップボードにコピーする)
-                clipboard.copy(json.dumps(res.json(), indent=4, ensure_ascii=False))
+                # clipboard.copy(json.dumps(res.json(), indent=4, ensure_ascii=False))
+                pass
             return df
 
         def _with_csv(client: httpx.Client, dct_of_params: dict) -> DataFrame:
@@ -504,7 +504,8 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 # デバッグ用(加工前のデータをクリップボードにコピーする)
-                clipboard.copy(res.text)
+                # clipboard.copy(res.text)
+                pass
             return df
 
         result: bool = False
