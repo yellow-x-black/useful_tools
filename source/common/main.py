@@ -1,8 +1,6 @@
 import asyncio
 import inspect
-import subprocess
 import sys
-from pathlib import Path
 
 
 def main() -> bool:
@@ -30,8 +28,6 @@ def main() -> bool:
             obj = main()
             if inspect.iscoroutine(obj):
                 asyncio.run(obj)
-            else:
-                main()
         except KeyboardInterrupt:
             sys.exit(0)
         except Exception:
@@ -91,22 +87,6 @@ def main() -> bool:
 
     def print_usage() -> None:
         """使用方法を表示します"""
-
-        def get_git_root() -> Path:
-            """gitリポジトリのルートディレクトリを取得します"""
-            return Path(subprocess.check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip())
-
-        def make_shortname_of_tools(name: str) -> str:
-            """Toolsの短縮名を作成します"""
-            return "".join(part[0] for part in name.split("_") if part)
-
-        def get_dct_from_tools_dir(rel_path: str) -> dict:
-            """sourceディレクトリからそれぞれのディレクトリ名と短縮名の辞書を取得します"""
-            base_path = get_git_root() / rel_path
-            # 除外するディレクトリ名
-            EXCLUDE: list = ["__pycache__", "common"]
-            return {p.name: make_shortname_of_tools(p.name) for p in base_path.iterdir() if p.is_dir() and p.name not in EXCLUDE}
-
         print("\nUsage: ")
         usage_tpl: tuple = (
             "main.py => GUI Launcher",
@@ -115,10 +95,32 @@ def main() -> bool:
         )
         print("\n".join(usage_tpl))
         print("\nTools List: ")
-        tools_dct: dict = get_dct_from_tools_dir("source")
+        tools_dct: dict = {
+            "convert_libre_to_pdf": "cltp",
+            "convert_office_to_pdf": "cotp",
+            "convert_to_md": "ctm",
+            "edit_pdf": "ep",
+            "get_file_list": "gfl",
+            "get_japan_government_statistics": "gjgs",
+        }
         print("\n".join(f"{key} => {value}" for key, value in tools_dct.items()))
         print("\nAttention: ")
-        attention_tpl: tuple = ("If you execute with GUI mode on WSL2(Ubuntu), execute the following command.", "sudo apt install fonts-ipafont")
+        attention_tpl: tuple = (
+            "* If you execute with GUI mode on WSL2(Ubuntu), execute the following command.",
+            "sudo apt install fonts-ipafont",
+            "* If you input Japanese into a Linux GUI app on WSLg(Ubuntu), try the following steps:",
+            "1. Execute the following command.",
+            "sudo apt install ibus ibus-mozc",
+            "2. Add the following to ~/.bashrc.",
+            "ibus-daemon -drx",
+            "export GTK_IM_MODULE=ibus",
+            "export QT_IM_MODULE=ibus",
+            "export XMODIFIERS=@im=ibus",
+            "3. Execute the following command.",
+            "ibus-setup",
+            "4. Select the following on the opening window.",
+            "Input Method => Add => Japanese => Mozc",
+        )
         print("\n".join(attention_tpl))
 
     result: bool = False
