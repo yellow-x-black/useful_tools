@@ -1,6 +1,7 @@
 import sys
 from dataclasses import dataclass
-from typing import Callable
+from functools import partial
+from typing import Any, Callable
 
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
@@ -34,6 +35,7 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
     def __init__(self):
         """初期化します"""
         super().__init__()
+        self.child_windows: list = []
         self._setup_ui()
 
     def closeEvent(self, event):
@@ -51,6 +53,36 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
     def _show_error(self, msg: str):
         """エラーを表示します"""
         QMessageBox.warning(self, "エラー", msg)
+
+    def _launch(self, tool: str) -> bool:
+        """指定したToolを呼び出します"""
+        result: bool = False
+        try:
+            match tool:
+                case "cltp":
+                    from source.convert_libre_to_pdf.cltp_with_gui import create_window
+                case "cotp":
+                    from source.convert_office_to_pdf.cotp_with_gui import create_window
+                case "ctm":
+                    from source.convert_to_md.ctm_with_gui import create_window
+                case "ep":
+                    from source.edit_pdf.ep_with_gui import create_window
+                case "gfl":
+                    from source.get_file_list.gfl_with_gui import create_window
+                case "gjgs":
+                    from source.get_japan_government_statistics.gjgs_with_gui import create_window
+                case _:
+                    raise
+            window: Any = create_window()
+            window.showMaximized()
+            self.child_windows.append(window)
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
 
     def _setup_ui(self) -> bool:
         """User Interfaceを設定します"""
@@ -73,135 +105,45 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
             launcher_items: list = [
                 LauncherItem(
                     title="source/convert_libre_to_pdf",
-                    callback=self.launch_cltp,
+                    callback=partial(self._launch, "cltp"),
                     description=ConvertLibreToPDF.__doc__,
                 ),
                 LauncherItem(
                     title="source/convert_office_to_pdf",
-                    callback=self.launch_cotp,
+                    callback=partial(self._launch, "cotp"),
                     description=ConvertOfficeToPDF.__doc__,
                 ),
                 LauncherItem(
                     title="source/convert_to_md",
-                    callback=self.launch_ctm,
+                    callback=partial(self._launch, "ctm"),
                     description=ConvertToMd.__doc__,
                 ),
                 LauncherItem(
                     title="source/edit_pdf",
-                    callback=self.launch_ep,
+                    callback=partial(self._launch, "ep"),
                     description=EditPdf.__doc__,
                 ),
                 LauncherItem(
                     title="source/get_file_list",
-                    callback=self.launch_gfl,
+                    callback=partial(self._launch, "gfl"),
                     description=GetFileList.__doc__,
                 ),
                 LauncherItem(
                     title="source/get_japan_government_statistics",
-                    callback=self.launch_gjgs,
+                    callback=partial(self._launch, "gjgs"),
                     description=GetJapanGovernmentStatistics.__doc__,
                 ),
             ]
             for item in launcher_items:
-                btn: QPushButton = QPushButton(item.title)
-                btn.clicked.connect(item.callback)
                 description: QLabel = QLabel(item.description)
                 description.setWordWrap(True)
-                main_container_layout.addWidget(btn)
+                btn: QPushButton = QPushButton(item.title)
+                btn.clicked.connect(item.callback)
                 main_container_layout.addWidget(description)
+                main_container_layout.addWidget(btn)
             main_container_layout.addStretch()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_cltp(self) -> bool:
-        result: bool = False
-        try:
-            from source.convert_libre_to_pdf.cltp_with_gui import MainApp_Of_CLTP, create_window
-
-            self.cltp_window: MainApp_Of_CLTP = create_window()
-            self.cltp_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_cotp(self) -> bool:
-        result: bool = False
-        try:
-            from source.convert_office_to_pdf.cotp_with_gui import MainApp_Of_COTP, create_window
-
-            self.cotp_window: MainApp_Of_COTP = create_window()
-            self.cotp_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_ctm(self) -> bool:
-        result: bool = False
-        try:
-            from source.convert_to_md.ctm_with_gui import MainApp_Of_CTM, create_window
-
-            self.ctm_window: MainApp_Of_CTM = create_window()
-            self.ctm_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_ep(self) -> bool:
-        result: bool = False
-        try:
-            from source.edit_pdf.ep_with_gui import MainApp_Of_EP, create_window
-
-            self.ep_window: MainApp_Of_EP = create_window()
-            self.ep_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_gfl(self) -> bool:
-        result: bool = False
-        try:
-            from source.get_file_list.gfl_with_gui import MainApp_Of_GFL, create_window
-
-            self.gfl_window: MainApp_Of_GFL = create_window()
-            self.gfl_window.show()
-        except Exception:
-            raise
-        else:
-            result = True
-        finally:
-            pass
-        return result
-
-    def launch_gjgs(self) -> bool:
-        result: bool = False
-        try:
-            from source.get_japan_government_statistics.gjgs_with_gui import MainApp_Of_GJGS, create_window
-
-            self.gjgs_window: MainApp_Of_GJGS = create_window()
-            self.gjgs_window.show()
-        except Exception:
-            raise
         else:
             result = True
         finally:
