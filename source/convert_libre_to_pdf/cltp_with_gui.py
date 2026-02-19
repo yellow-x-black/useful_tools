@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
@@ -98,10 +98,11 @@ class MainApp_Of_CLTP(QMainWindow):
             self.obj_of_lt.file_path_of_log = str(file_p)
             self.obj_of_lt._setup_file_handler(self.obj_of_lt.file_path_of_log)
             self.log_emitter: LogEmitter = LogEmitter()
-            self.log_emitter.log_signal.connect(self.log_area.append)
+            self.log_emitter.log_signal.connect(self.log_area.append, Qt.ConnectionType.QueuedConnection)
             text_handler: QTextEditHandler = QTextEditHandler(self.log_emitter)
             text_handler.setFormatter(self.obj_of_lt.file_formatter)
             self.obj_of_lt.logger.addHandler(text_handler)
+            self.obj_of_lt.logger.propagate = False
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -288,10 +289,6 @@ def create_window() -> MainApp_Of_CLTP:
     from source.convert_libre_to_pdf.cltp_class import ConvertLibreToPDF
 
     window: MainApp_Of_CLTP = MainApp_Of_CLTP(ConvertLibreToPDF)
-
-    window.resize(1000, 800)
-    # 最大化して、表示させる
-    window.showMaximized()
     return window
 
 
@@ -312,7 +309,10 @@ def main() -> bool:
             font: QFont = QFont()
         font.setPointSize(12)
         app.setFont(font)
-        create_window()
+        window: MainApp_Of_CLTP = create_window()
+        window.resize(1000, 800)
+        # 最大化して、表示させる
+        window.showMaximized()
         sys.exit(app.exec())
     except ImportError as e:
         obj_of_gt._show_start_up_error(f"error: \n{str(e)}")
