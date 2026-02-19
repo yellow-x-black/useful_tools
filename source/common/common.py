@@ -2,6 +2,7 @@ import datetime
 import logging
 import platform
 import sys
+import uuid
 from logging import FileHandler, Formatter, Logger, StreamHandler
 from typing import Any
 
@@ -22,7 +23,7 @@ class LogTools:
         """初期化します"""
         self.file_path_of_log: str = ""
         # create logger
-        self.logger: Logger = logging.getLogger(__name__)
+        self.logger: Logger = logging.getLogger(f"{__name__}.{uuid.uuid4()}")
         self.logger.setLevel(logging.DEBUG)
 
     def _setup_file_handler(self, file_path: str) -> bool:
