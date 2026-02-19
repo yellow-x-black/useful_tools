@@ -1,10 +1,9 @@
-import logging
 import platform
 import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import Qt, Signal, Slot
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,25 +25,11 @@ from source.common.common import DatetimeTools, GUITools, LogTools, PlatformTool
 from source.convert_to_md.ctm_class import ConvertToMd
 
 
-class LogEmitter(QObject):
-    """loggingの出力をQtのSignalに変換し、GUIスレッドへ安全にログを伝達するためのクラス"""
-
-    log_signal: Signal = Signal(str)
-
-
-class QTextEditHandler(logging.Handler):
-    """QTextEditにログを流すためのハンドラ"""
-
-    def __init__(self, emitter: LogEmitter):
-        super().__init__()
-        self.emitter: LogEmitter = emitter
-
-    def emit(self, record: logging.LogRecord):
-        msg: str = self.format(record)
-        self.emitter.log_signal.emit(msg)
-
-
 class MainApp_Of_CTM(QMainWindow):
+    """GUIアプリ"""
+
+    log: Signal = Signal(str)
+
     def __init__(self):
         """初期化します"""
         super().__init__()
@@ -59,9 +44,6 @@ class MainApp_Of_CTM(QMainWindow):
         """終了します"""
         if self.obj_of_lt:
             self._show_info(f"ログファイルは、\n{self.obj_of_lt.file_path_of_log}\nに出力されました。")
-        for h in self.obj_of_lt.logger.handlers[:]:
-            if isinstance(h, QTextEditHandler):
-                self.obj_of_lt.logger.removeHandler(h)
         super().closeEvent(event)
 
     def _show_info(self, msg: str):
@@ -82,6 +64,11 @@ class MainApp_Of_CTM(QMainWindow):
         QMessageBox.warning(self, "エラー", msg)
         self.obj_of_lt.logger.warning(msg)
 
+    @Slot(str)
+    def _append_log(self, msg: str):
+        """ログを追加します"""
+        self.log_area.append(msg)
+
     def _setup_log(self) -> bool:
         """ログを設定します"""
         result: bool = False
@@ -97,11 +84,8 @@ class MainApp_Of_CTM(QMainWindow):
             file_p: Path = folder_p / file_name
             self.obj_of_lt.file_path_of_log = str(file_p)
             self.obj_of_lt._setup_file_handler(self.obj_of_lt.file_path_of_log)
-            self.log_emitter: LogEmitter = LogEmitter()
-            self.log_emitter.log_signal.connect(self.log_area.append, Qt.ConnectionType.QueuedConnection)
-            text_handler: QTextEditHandler = QTextEditHandler(self.log_emitter)
-            text_handler.setFormatter(self.obj_of_lt.file_formatter)
-            self.obj_of_lt.logger.addHandler(text_handler)
+            self.obj_of_lt._setup_qt_signal_handler(self.log)
+            self.log.connect(self._append_log, Qt.ConnectionType.QueuedConnection)
             self.obj_of_lt.logger.propagate = False
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
