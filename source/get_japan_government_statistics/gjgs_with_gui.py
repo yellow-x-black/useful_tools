@@ -99,9 +99,9 @@ class MainApp_Of_GJGS(QMainWindow):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
+        self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self.obj_of_cls: GetJapanGovernmentStatistics = GetJapanGovernmentStatistics(self.obj_of_lt.logger)
         self._setup_first_ui()
-        self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self._setup_log()
         self.worker_of_getting_ids: GetIdsWorker | None = None
         self.thread_of_getting_ids: QThread | None = None
@@ -157,6 +157,7 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_error(f"error: \n{str(e)}")
         else:
             result = True
+            self.obj_of_cls.append_init_log()
         finally:
             pass
         return result

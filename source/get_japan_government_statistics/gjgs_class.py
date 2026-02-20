@@ -1,6 +1,7 @@
 import asyncio
 import csv
 import io
+import json
 import shutil
 import sys
 from logging import Logger
@@ -25,14 +26,12 @@ class GetJapanGovernmentStatistics:
     def __init__(self, logger: Logger, cancel_event=None):
         """初期化します"""
         self.log: Logger = logger
-        self.log.info(self.__class__.__doc__)
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self.credit_text: tuple = (
             "クレジット表示",
             "このサービスは、政府統計総合窓口(e-Stat)のAPI機能を使用していますが、",
             "サービスの内容は国によって保証されたものではありません。",
         )
-        self.log.info("\n".join(self.credit_text))
         # 統計表IDの一覧を取得する方法
         self.dct_of_get_type: dict = {
             "非同期": "処理の実行中に待ち時間が発生しても、次の処理に進める方法",
@@ -93,11 +92,25 @@ class GetJapanGovernmentStatistics:
         # 統計表IDの一覧のCSVファイルを格納するフォルダ
         self.folder_p_of_ids: Path = exe_path.parent / "__stats_data_ids__"
         self.folder_s_of_ids: str = str(self.folder_p_of_ids)
-        self.log.info(f"統計表IDのリストを格納するフォルダ => {self.folder_s_of_ids}")
         # 指定の統計表のCSVファイルを格納するフォルダ
         self.folder_p_of_table: Path = exe_path.parent / "__output__"
         self.folder_s_of_table: str = str(self.folder_p_of_table)
-        self.log.info(f"指定の統計表を格納するフォルダ => {self.folder_s_of_table}")
+
+    def append_init_log(self) -> bool:
+        """初期化のログを追加します"""
+        result: bool = False
+        try:
+            self.log.info(f"{self.__class__.__qualname__}: {self.__class__.__doc__}")
+            self.log.info("\n".join(self.credit_text))
+            self.log.info(f"統計表IDのリストを格納するフォルダ => {self.folder_s_of_ids}")
+            self.log.info(f"指定の統計表を格納するフォルダ => {self.folder_s_of_table}")
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
 
     def _parser_xml(self, res: httpx.Response) -> tuple[dict, int]:
         """XMLのデータを解析します(同期版と非同期版で共通)"""
@@ -117,8 +130,9 @@ class GetJapanGovernmentStatistics:
         except KeyboardInterrupt:
             raise
         except Exception:
-            # デバッグ用(加工前のデータをクリップボードにコピーする)
-            # clipboard.copy(res.text)
+            # デバッグ
+            self.log.debug(f"error: {self._parser_xml.__qualname__}")
+            self.log.debug(res.text)
             raise
         else:
             pass
@@ -146,8 +160,9 @@ class GetJapanGovernmentStatistics:
         except KeyboardInterrupt:
             raise
         except Exception:
-            # デバッグ用(加工前のデータをクリップボードにコピーする)
-            # clipboard.copy(json.dumps(data, indent=4, ensure_ascii=False))
+            # デバッグ
+            self.log.debug(f"error: {self._parser_json.__qualname__}")
+            self.log.debug(json.dumps(data, indent=4, ensure_ascii=False))
             raise
         else:
             pass
@@ -183,8 +198,9 @@ class GetJapanGovernmentStatistics:
         except KeyboardInterrupt:
             raise
         except Exception:
-            # デバッグ用(加工前のデータをクリップボードにコピーする)
-            # clipboard.copy(res.text)
+            # デバッグ
+            self.log.debug(f"error: {self._parser_csv.__qualname__}")
+            self.log.debug(res.text)
             raise
         else:
             pass
@@ -392,12 +408,13 @@ class GetJapanGovernmentStatistics:
                 if "値" in df.columns:
                     df["値"] = pandas.to_numeric(df["値"], errors="coerce")
             except Exception:
+                # デバッグ
+                self.log.debug(f"error: {_with_xml.__name__}")
+                self.log.debug(res.text)
                 raise
             else:
                 pass
             finally:
-                # デバッグ用(加工前のデータをクリップボードにコピーする)
-                # clipboard.copy(res.text)
                 pass
             return df
 
@@ -444,12 +461,13 @@ class GetJapanGovernmentStatistics:
                 if "値" in df.columns:
                     df["値"] = pandas.to_numeric(df["値"], errors="coerce")
             except Exception:
+                # デバッグ
+                self.log.debug(f"error: {_with_json.__name__}")
+                self.log.debug(json.dumps(res.json(), indent=4, ensure_ascii=False))
                 raise
             else:
                 pass
             finally:
-                # デバッグ用(加工前のデータをクリップボードにコピーする)
-                # clipboard.copy(json.dumps(res.json(), indent=4, ensure_ascii=False))
                 pass
             return df
 
@@ -499,12 +517,13 @@ class GetJapanGovernmentStatistics:
                 if "値" in df.columns:
                     df["値"] = pandas.to_numeric(df["値"], errors="coerce")
             except Exception:
+                # デバッグ
+                self.log.debug(f"error: {_with_csv.__name__}")
+                self.log.debug(res.text)
                 raise
             else:
                 pass
             finally:
-                # デバッグ用(加工前のデータをクリップボードにコピーする)
-                # clipboard.copy(res.text)
                 pass
             return df
 

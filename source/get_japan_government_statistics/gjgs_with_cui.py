@@ -166,8 +166,9 @@ async def main() -> bool:
     finally:
         pass
     # 処理の本体部分
-    obj_with_cui: GJGS_With_Cui = GJGS_With_Cui()
     obj_of_cls: GetJapanGovernmentStatistics = GetJapanGovernmentStatistics(obj_of_lt.logger)
+    obj_of_cls.append_init_log()
+    obj_with_cui: GJGS_With_Cui = GJGS_With_Cui()
     while True:
         try:
             obj_of_cls.APP_ID = obj_with_cui._input_app_id()
@@ -175,8 +176,17 @@ async def main() -> bool:
             if obj_with_cui._input_bool(f"{obj_of_cls.write_stats_data_ids_to_file.__doc__} => 行いますか？"):
                 # 取得方法は非同期のみ
                 obj_of_cls.lst_of_get_type = list(list(obj_of_cls.dct_of_get_type.items())[0])
-                # 統計表IDをテキストファイルに書き出す
-                await obj_of_cls.write_stats_data_ids_to_file()
+                try:
+                    # 統計表IDをテキストファイルに書き出す
+                    await obj_of_cls.write_stats_data_ids_to_file()
+                except asyncio.CancelledError:
+                    obj_of_lt.logger.warning(f"{obj_of_cls.write_stats_data_ids_to_file.__doc__} => キャンセルされました。")
+                except Exception:
+                    obj_of_lt.logger.error(f"{obj_of_cls.write_stats_data_ids_to_file.__doc__} => 失敗しました。")
+                else:
+                    obj_of_lt.logger.info(f"{obj_of_cls.write_stats_data_ids_to_file.__doc__} => 成功しました。")
+                finally:
+                    pass
             obj_of_cls.STATS_DATA_ID = obj_with_cui._input_stats_data_id()
             # 取得方法は同期のみ
             obj_of_cls.lst_of_get_type = list(list(obj_of_cls.dct_of_get_type.items())[1])
@@ -190,10 +200,8 @@ async def main() -> bool:
             obj_of_cls.show_table()
             if obj_with_cui._input_bool(f"{obj_of_cls.output_table_to_csv.__doc__} => 行いますか？"):
                 obj_of_cls.output_table_to_csv()
-        except asyncio.CancelledError:
-            raise
         except KeyboardInterrupt:
-            raise
+            sys.exit(0)
         except Exception as e:
             obj_of_lt.logger.critical(f"***処理が失敗しました。***: \n{str(e)}")
         else:
