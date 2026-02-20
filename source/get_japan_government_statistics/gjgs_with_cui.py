@@ -215,15 +215,4 @@ async def main() -> bool:
 
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main())
-    except asyncio.CancelledError:
-        sys.exit(0)
-    except KeyboardInterrupt:
-        sys.exit(0)
-    except Exception:
-        pass
-    else:
-        pass
-    finally:
-        pass
+    asyncio.run(main())
