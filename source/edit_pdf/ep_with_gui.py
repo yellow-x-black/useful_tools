@@ -9,6 +9,7 @@ from PySide6.QtGui import QFont, QFontDatabase, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLayoutItem,
@@ -55,12 +56,12 @@ class MainApp_Of_EP(QMainWindow):
             self._show_info(f"ログファイルは、\n{self.obj_of_lt.file_path_of_log}\nに出力されました。")
         super().closeEvent(event)
 
-    def _show_info(self, msg: str):
+    def _show_info(self, msg: str) -> None:
         """情報を表示します"""
         QMessageBox.information(self, "情報", msg)
         self.obj_of_lt.logger.info(msg)
 
-    def _show_result(self, label: str | None, success: bool):
+    def _show_result(self, label: str | None, success: bool) -> None:
         """結果を表示します"""
         QMessageBox.information(self, "結果", f"{label} => {'成功' if success else '失敗'}しました。")
         if success:
@@ -68,13 +69,13 @@ class MainApp_Of_EP(QMainWindow):
         else:
             self.obj_of_lt.logger.error(f"{label} => 失敗しました。")
 
-    def _show_error(self, msg: str):
+    def _show_error(self, msg: str) -> None:
         """エラーを表示します"""
         QMessageBox.warning(self, "エラー", msg)
         self.obj_of_lt.logger.warning(msg)
 
     @Slot(str)
-    def _append_log(self, msg: str):
+    def _append_log(self, msg: str) -> None:
         """ログを追加します"""
         self.log_area.append(msg)
 
@@ -113,138 +114,169 @@ class MainApp_Of_EP(QMainWindow):
             central: QWidget = QWidget()
             self.setCentralWidget(central)
             base_layout: QVBoxLayout = QVBoxLayout(central)
-            # 各要素のタイトル
-            element_title_area: QHBoxLayout = QHBoxLayout()
-            base_layout.addLayout(element_title_area)
-            element_title_area.addWidget(QLabel("機能"), 1)
-            element_title_area.addWidget(QLabel("ビューワー"), 1)
-            element_title_area.addWidget(QLabel("ログ"), 1)
             # 主要
             main_layout: QHBoxLayout = QHBoxLayout()
-            base_layout.addLayout(main_layout)
+            base_layout.addLayout(main_layout, stretch=3)
             # 左側
+            left_grp_bx: QGroupBox = QGroupBox(title="機能")
+            layout_of_left: QVBoxLayout = QVBoxLayout(left_grp_bx)
             left_scroll_area: QScrollArea = QScrollArea()
             left_scroll_area.setWidgetResizable(True)
-            main_layout.addWidget(left_scroll_area, 1)
             left_container: QWidget = QWidget()
             left_container_layout: QVBoxLayout = QVBoxLayout(left_container)
             left_scroll_area.setWidget(left_container)
+            layout_of_left.addWidget(left_scroll_area)
+            main_layout.addWidget(left_grp_bx, stretch=1)
             # 中央
+            central_grp_bx: QGroupBox = QGroupBox(title="ビューワー")
+            layout_of_central: QVBoxLayout = QVBoxLayout(central_grp_bx)
             center_scroll_area: QScrollArea = QScrollArea()
             center_scroll_area.setWidgetResizable(True)
-            main_layout.addWidget(center_scroll_area, 1)
             center_container: QWidget = QWidget()
             self.center_container_layout: QVBoxLayout = QVBoxLayout(center_container)
             center_scroll_area.setWidget(center_container)
+            layout_of_central.addWidget(center_scroll_area)
+            main_layout.addWidget(central_grp_bx, stretch=1)
             # 右側
+            right_grp_bx: QGroupBox = QGroupBox(title="ログ")
+            layout_of_right: QVBoxLayout = QVBoxLayout(right_grp_bx)
             right_scroll_area: QScrollArea = QScrollArea()
             right_scroll_area.setWidgetResizable(True)
-            main_layout.addWidget(right_scroll_area, 1)
             right_container: QWidget = QWidget()
             right_container_layout: QVBoxLayout = QVBoxLayout(right_container)
-            right_scroll_area.setWidget(right_container)
             self.log_area: QTextEdit = QTextEdit()
             self.log_area.setReadOnly(True)
             right_container_layout.addWidget(self.log_area)
+            right_scroll_area.setWidget(right_container)
+            layout_of_right.addWidget(right_scroll_area)
+            main_layout.addWidget(right_grp_bx, stretch=1)
             # ファイル選択と再読み込み
+            grp_bx_of_sr: QGroupBox = QGroupBox(title=f"{self.select_pdf.__doc__} / {self.reload_pdf.__doc__}")
+            layout_of_sr: QVBoxLayout = QVBoxLayout(grp_bx_of_sr)
+            btn_container_of_sr: QWidget = QWidget()
+            btn_container_layout_of_sr: QHBoxLayout = QHBoxLayout(btn_container_of_sr)
+            file_path_lbl: QLabel = QLabel("PDFファイルパス")
             self.file_input: QLineEdit = QLineEdit()
-            left_container_layout.addWidget(QLabel("PDFファイルパス"))
-            left_container_layout.addWidget(self.file_input)
-            select_and_reload_area: QHBoxLayout = QHBoxLayout()
             browse_btn: QPushButton = QPushButton("参照する")
-            select_and_reload_area.addWidget(browse_btn)
-            reload_btn: QPushButton = QPushButton("再読み込みする")
-            select_and_reload_area.addWidget(reload_btn)
-            left_container_layout.addLayout(select_and_reload_area)
             browse_btn.clicked.connect(self.select_pdf)
+            btn_container_layout_of_sr.addWidget(browse_btn)
+            reload_btn: QPushButton = QPushButton("再読み込みする")
             reload_btn.clicked.connect(self.reload_pdf)
+            btn_container_layout_of_sr.addWidget(reload_btn)
+            layout_of_sr.addWidget(file_path_lbl)
+            layout_of_sr.addWidget(self.file_input)
+            layout_of_sr.addWidget(btn_container_of_sr)
+            left_container_layout.addWidget(grp_bx_of_sr)
             # パスワード入力
+            grp_bx_of_ed: QGroupBox = QGroupBox(title=f"{self.encrypt_pdf.__doc__} / {self.decrypt_pdf.__doc__}")
+            layout_of_ed: QVBoxLayout = QVBoxLayout(grp_bx_of_ed)
             self.password_input: QLineEdit = QLineEdit()
             self.password_input.editingFinished.connect(self._get_password)
-            left_container_layout.addWidget(QLabel("パスワード"))
-            left_container_layout.addWidget(self.password_input)
+            layout_of_ed.addWidget(QLabel("パスワード"))
+            layout_of_ed.addWidget(self.password_input)
             # 暗号化と復号化
-            encrypt_and_decrypt_area: QHBoxLayout = QHBoxLayout()
+            btn_container_of_ed: QWidget = QWidget()
+            btn_container_layout_of_ed: QHBoxLayout = QHBoxLayout(btn_container_of_ed)
             encrypt_btn: QPushButton = QPushButton("暗号化する")
-            encrypt_and_decrypt_area.addWidget(encrypt_btn)
-            decrypt_btn: QPushButton = QPushButton("復号化する")
-            encrypt_and_decrypt_area.addWidget(decrypt_btn)
-            left_container_layout.addLayout(encrypt_and_decrypt_area)
             encrypt_btn.clicked.connect(self.encrypt_pdf)
+            btn_container_layout_of_ed.addWidget(encrypt_btn)
+            decrypt_btn: QPushButton = QPushButton("復号化する")
             decrypt_btn.clicked.connect(self.decrypt_pdf)
+            btn_container_layout_of_ed.addWidget(decrypt_btn)
+            layout_of_ed.addWidget(btn_container_of_ed)
+            left_container_layout.addWidget(grp_bx_of_ed)
             # メタデータの表示
-            meta_btn: QPushButton = QPushButton("メタデータを表示する")
-            left_container_layout.addWidget(meta_btn)
-            meta_btn.clicked.connect(self.show_metadata)
+            grp_bx_of_sm: QGroupBox = QGroupBox(title=self.show_metadata.__doc__)
+            layout_of_sm: QVBoxLayout = QVBoxLayout(grp_bx_of_sm)
+            show_meta_btn: QPushButton = QPushButton("メタデータを表示する")
+            show_meta_btn.clicked.connect(self.show_metadata)
+            layout_of_sm.addWidget(show_meta_btn)
+            left_container_layout.addWidget(grp_bx_of_sm)
             # メタデータの入力
-            left_container_layout.addWidget(QLabel("メタデータの入力"))
+            grp_bx_of_wm: QGroupBox = QGroupBox(title=self.write_metadata.__doc__)
+            layout_of_wm: QVBoxLayout = QVBoxLayout(grp_bx_of_wm)
+            layout_of_wm.addWidget(QLabel("メタデータの入力"))
             self.widget_of_metadata: dict = {}
             self.line_edits_of_metadata: dict = {}
             for key, value in self.obj_of_cls.fields.items():
                 if key in ["creation_date", "modification_date"]:
                     continue
                 self.line_edits_of_metadata[value] = QLineEdit()
-                left_container_layout.addWidget(QLabel(key.capitalize().replace("_", " ")))
-                left_container_layout.addWidget(self.line_edits_of_metadata[value])
+                layout_of_wm.addWidget(QLabel(key.capitalize().replace("_", " ")))
+                layout_of_wm.addWidget(self.line_edits_of_metadata[value])
             # メタデータの書き込み
             write_meta_btn: QPushButton = QPushButton("メタデータを書き込む")
-            left_container_layout.addWidget(write_meta_btn)
             write_meta_btn.clicked.connect(self.write_metadata)
+            layout_of_wm.addWidget(write_meta_btn)
+            left_container_layout.addWidget(grp_bx_of_wm)
             # マージ
+            grp_bx_of_mp: QGroupBox = QGroupBox(title=self.merge_pdfs.__doc__)
+            layout_of_mp: QVBoxLayout = QVBoxLayout(grp_bx_of_mp)
             merge_btn: QPushButton = QPushButton("複数のPDFファイルをマージする")
-            left_container_layout.addWidget(merge_btn)
             merge_btn.clicked.connect(self.merge_pdfs)
+            layout_of_mp.addWidget(merge_btn)
+            left_container_layout.addWidget(grp_bx_of_mp)
             # ページの抽出
-            begin_spin_of_ep: QSpinBox = QSpinBox()
-            end_spin_of_ep: QSpinBox = QSpinBox()
-            page_layout_of_ep: QHBoxLayout = QHBoxLayout()
-            page_layout_of_ep.addWidget(QLabel("抽出を開始するページ"))
-            page_layout_of_ep.addWidget(begin_spin_of_ep)
-            page_layout_of_ep.addWidget(QLabel("抽出を終了するページ"))
-            page_layout_of_ep.addWidget(end_spin_of_ep)
-            left_container_layout.addLayout(page_layout_of_ep)
+            grp_bx_of_ep: QGroupBox = QGroupBox(title=self.extract_pages.__doc__)
+            layout_of_ep: QVBoxLayout = QVBoxLayout(grp_bx_of_ep)
+            page_container_of_ep: QWidget = QWidget()
+            page_container_layout_of_ep: QHBoxLayout = QHBoxLayout(page_container_of_ep)
+            page_container_layout_of_ep.addWidget(QLabel("抽出を開始するページ: "))
+            self.begin_spin_of_ep: QSpinBox = QSpinBox()
+            page_container_layout_of_ep.addWidget(self.begin_spin_of_ep)
+            page_container_layout_of_ep.addWidget(QLabel("抽出を終了するページ: "))
+            self.end_spin_of_ep: QSpinBox = QSpinBox()
+            page_container_layout_of_ep.addWidget(self.end_spin_of_ep)
             extract_page_btn: QPushButton = QPushButton("ページを抽出する")
-            left_container_layout.addWidget(extract_page_btn)
-            extract_page_btn.clicked.connect(
-                lambda *args, begin_spin=begin_spin_of_ep, end_spin=end_spin_of_ep: self.extract_pages(begin_spin, end_spin)
-            )
+            extract_page_btn.clicked.connect(self.extract_pages)
+            layout_of_ep.addWidget(page_container_of_ep)
+            layout_of_ep.addWidget(extract_page_btn)
+            left_container_layout.addWidget(grp_bx_of_ep)
             # ページの削除
-            begin_spin_of_dp: QSpinBox = QSpinBox()
-            end_spin_of_dp: QSpinBox = QSpinBox()
-            page_layout_of_dp: QHBoxLayout = QHBoxLayout()
-            page_layout_of_dp.addWidget(QLabel("削除を開始するページ"))
-            page_layout_of_dp.addWidget(begin_spin_of_dp)
-            page_layout_of_dp.addWidget(QLabel("削除を終了するページ"))
-            page_layout_of_dp.addWidget(end_spin_of_dp)
-            left_container_layout.addLayout(page_layout_of_dp)
+            grp_bx_of_dp: QGroupBox = QGroupBox(title=self.delete_pages.__doc__)
+            layout_of_dp: QVBoxLayout = QVBoxLayout(grp_bx_of_dp)
+            page_container_of_dp: QWidget = QWidget()
+            page_container_layout_of_dp: QHBoxLayout = QHBoxLayout(page_container_of_dp)
+            page_container_layout_of_dp.addWidget(QLabel("削除を開始するページ: "))
+            self.begin_spin_of_dp: QSpinBox = QSpinBox()
+            page_container_layout_of_dp.addWidget(self.begin_spin_of_dp)
+            page_container_layout_of_dp.addWidget(QLabel("削除を終了するページ: "))
+            self.end_spin_of_dp: QSpinBox = QSpinBox()
+            page_container_layout_of_dp.addWidget(self.end_spin_of_dp)
             delete_page_btn: QPushButton = QPushButton("ページを削除する")
-            left_container_layout.addWidget(delete_page_btn)
-            delete_page_btn.clicked.connect(
-                lambda *args, begin_spin=begin_spin_of_dp, end_spin=end_spin_of_dp: self.delete_pages(begin_spin, end_spin)
-            )
+            delete_page_btn.clicked.connect(self.delete_pages)
+            layout_of_dp.addWidget(page_container_of_dp)
+            layout_of_dp.addWidget(delete_page_btn)
+            left_container_layout.addWidget(grp_bx_of_dp)
             # テキストの抽出
-            begin_spin_of_et: QSpinBox = QSpinBox()
-            end_spin_of_et: QSpinBox = QSpinBox()
-            page_layout_of_et: QHBoxLayout = QHBoxLayout()
-            page_layout_of_et.addWidget(QLabel("テキストの抽出を開始するページ"))
-            page_layout_of_et.addWidget(begin_spin_of_et)
-            page_layout_of_et.addWidget(QLabel("テキストの抽出を終了するページ"))
-            page_layout_of_et.addWidget(end_spin_of_et)
-            left_container_layout.addLayout(page_layout_of_et)
+            grp_bx_of_et: QGroupBox = QGroupBox(title=self.extract_text.__doc__)
+            layout_of_et: QVBoxLayout = QVBoxLayout(grp_bx_of_et)
+            page_container_of_et: QWidget = QWidget()
+            page_container_layout_of_et: QHBoxLayout = QHBoxLayout(page_container_of_et)
+            page_container_layout_of_et.addWidget(QLabel("テキストの抽出を開始するページ: "))
+            self.begin_spin_of_et: QSpinBox = QSpinBox()
+            page_container_layout_of_et.addWidget(self.begin_spin_of_et)
+            page_container_layout_of_et.addWidget(QLabel("テキストの抽出を終了するページ: "))
+            self.end_spin_of_et: QSpinBox = QSpinBox()
+            page_container_layout_of_et.addWidget(self.end_spin_of_et)
             extract_text_btn: QPushButton = QPushButton("テキストを抽出する")
-            left_container_layout.addWidget(extract_text_btn)
-            extract_text_btn.clicked.connect(
-                lambda *args, begin_spin=begin_spin_of_et, end_spin=end_spin_of_et: self.extract_text(begin_spin, end_spin)
-            )
+            extract_text_btn.clicked.connect(self.extract_text)
+            layout_of_et.addWidget(page_container_of_et)
+            layout_of_et.addWidget(extract_text_btn)
+            left_container_layout.addWidget(grp_bx_of_et)
             # ページの回転
-            spin_of_rp: QSpinBox = QSpinBox()
-            page_layout_of_rp: QHBoxLayout = QHBoxLayout()
-            page_layout_of_rp.addWidget(QLabel("回転するページ"))
-            page_layout_of_rp.addWidget(spin_of_rp)
+            grp_bx_of_rp: QGroupBox = QGroupBox(title=self.rotate_page.__doc__)
+            layout_of_rp: QVBoxLayout = QVBoxLayout(grp_bx_of_rp)
+            page_container_of_rp: QWidget = QWidget()
+            page_container_layout_of_rp: QHBoxLayout = QHBoxLayout(page_container_of_rp)
+            page_container_layout_of_rp.addWidget(QLabel("回転するページ: "))
+            self.spin_of_rp: QSpinBox = QSpinBox()
+            page_container_layout_of_rp.addWidget(self.spin_of_rp)
             rotate_btn: QPushButton = QPushButton("ページを時計回りに回転する（90度）")
-            page_layout_of_rp.addWidget(rotate_btn)
-            left_container_layout.addLayout(page_layout_of_rp)
-            rotate_btn.clicked.connect(lambda *args, spin=spin_of_rp: self.rotate_page(spin))
+            rotate_btn.clicked.connect(self.rotate_page)
+            layout_of_rp.addWidget(page_container_of_rp)
+            layout_of_rp.addWidget(rotate_btn)
+            left_container_layout.addWidget(grp_bx_of_rp)
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -335,7 +367,8 @@ class MainApp_Of_EP(QMainWindow):
             pass
         return result
 
-    def _get_password(self):
+    @Slot()
+    def _get_password(self) -> None:
         """パスワードを取得します"""
         try:
             tmp: str = self.password_input.text().strip()
@@ -349,8 +382,9 @@ class MainApp_Of_EP(QMainWindow):
         finally:
             pass
 
+    @Slot()
     def select_pdf(self) -> bool:
-        """選択します"""
+        """PDFファイルを選択します"""
         result: bool = False
         try:
             self.obj_of_cls.file_path, _ = QFileDialog.getOpenFileName(self, caption="PDFファイルを選択", dir="", filter="PDF Files (*.pdf)")
@@ -363,8 +397,9 @@ class MainApp_Of_EP(QMainWindow):
             pass
         return result
 
+    @Slot()
     def reload_pdf(self) -> bool:
-        """再読み込みします"""
+        """PDFファイルを再読み込みします"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
@@ -378,8 +413,9 @@ class MainApp_Of_EP(QMainWindow):
             pass
         return result
 
+    @Slot()
     def encrypt_pdf(self) -> bool:
-        """暗号化します"""
+        """PDFファイルを暗号化します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "" or self.obj_of_cls.password == "":
@@ -393,8 +429,9 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.encrypt_pdf.__doc__, result)
         return result
 
+    @Slot()
     def decrypt_pdf(self) -> bool:
-        """復号化します"""
+        """PDFファイルを復号化します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "" or self.obj_of_cls.password == "":
@@ -408,8 +445,9 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.decrypt_pdf.__doc__, result)
         return result
 
+    @Slot()
     def show_metadata(self) -> bool:
-        """メタデータを表示します"""
+        """PDFファイルのメタデータを表示します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
@@ -424,8 +462,9 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.show_metadata.__doc__, result)
         return result
 
+    @Slot()
     def write_metadata(self) -> bool:
-        """メタデータを書き込みます"""
+        """PDFファイルのメタデータを書き込みます"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
@@ -448,8 +487,9 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.write_metadata.__doc__, result)
         return result
 
+    @Slot()
     def merge_pdfs(self) -> bool:
-        """マージします"""
+        """複数のPDFファイルをマージします"""
         result: bool = False
         try:
             files, _ = QFileDialog.getOpenFileNames(self, caption="マージするPDFを選択", dir=QDir.homePath(), filter="PDF Files (*.pdf)")
@@ -467,14 +507,15 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.merge_pdfs.__doc__, result)
         return result
 
-    def extract_pages(self, b_spin: QSpinBox, e_spin: QSpinBox) -> bool:
-        """ページを抽出します"""
+    @Slot()
+    def extract_pages(self) -> bool:
+        """PDFファイルからページを抽出します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
                 raise Exception("PDFファイルを選択してください。")
             self._setup_third_ui()
-            begin, end = b_spin.value(), e_spin.value()
+            begin, end = self.begin_spin_of_ep.value(), self.end_spin_of_ep.value()
             if begin == 0 or end == 0:
                 raise Exception("ページ範囲を指定してください。")
             if begin < 1 or end > self.obj_of_cls.num_of_pages or end < begin:
@@ -488,14 +529,15 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.extract_pages.__doc__, result)
         return result
 
-    def delete_pages(self, b_spin: QSpinBox, e_spin: QSpinBox) -> bool:
-        """ページを削除します"""
+    @Slot()
+    def delete_pages(self) -> bool:
+        """PDFファイルからページを削除します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
                 raise Exception("PDFファイルを選択してください。")
             self._setup_third_ui()
-            begin, end = b_spin.value(), e_spin.value()
+            begin, end = self.begin_spin_of_dp.value(), self.end_spin_of_dp.value()
             if begin == 0 or end == 0:
                 raise Exception("ページ範囲を指定してください。")
             if begin < 1 or end > self.obj_of_cls.num_of_pages or end < begin:
@@ -509,14 +551,15 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.delete_pages.__doc__, result)
         return result
 
-    def extract_text(self, b_spin: QSpinBox, e_spin: QSpinBox) -> bool:
-        """テキストを抽出します"""
+    @Slot()
+    def extract_text(self) -> bool:
+        """PDFファイルのページからテキストを抽出します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
                 raise Exception("PDFファイルを選択してください。")
             self._setup_third_ui()
-            begin, end = b_spin.value(), e_spin.value()
+            begin, end = self.begin_spin_of_et.value(), self.end_spin_of_et.value()
             if begin == 0 or end == 0:
                 raise Exception("ページ範囲を指定してください。")
             if begin < 1 or end > self.obj_of_cls.num_of_pages or end < begin:
@@ -530,14 +573,15 @@ class MainApp_Of_EP(QMainWindow):
             self._show_result(self.extract_text.__doc__, result)
         return result
 
-    def rotate_page(self, spin: QSpinBox) -> bool:
-        """ページを回転します"""
+    @Slot()
+    def rotate_page(self) -> bool:
+        """PDFファイルのページを回転します"""
         result: bool = False
         try:
             if self.obj_of_cls.file_path == "":
                 raise Exception("PDFファイルを選択してください。")
             self._setup_third_ui()
-            page: int = spin.value()
+            page: int = self.spin_of_rp.value()
             if page == 0:
                 raise Exception("ページ範囲を指定してください。")
             if page < 1 or page > self.obj_of_cls.num_of_pages:
