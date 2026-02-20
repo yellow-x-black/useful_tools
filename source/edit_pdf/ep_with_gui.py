@@ -37,9 +37,9 @@ class MainApp_Of_EP(QMainWindow):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
+        self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self.obj_of_cls: EditPdf = EditPdf(self.obj_of_lt.logger)
         self._setup_first_ui()
-        self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self._setup_log()
 
     def closeEvent(self, event):
@@ -101,6 +101,7 @@ class MainApp_Of_EP(QMainWindow):
             self._show_error(f"error: \n{str(e)}")
         else:
             result = True
+            self.obj_of_cls.append_init_log()
         finally:
             pass
         return result

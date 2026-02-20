@@ -15,7 +15,6 @@ class EditPdf:
     def __init__(self, logger: Logger):
         """初期化します"""
         self.log: Logger = logger
-        self.log.info(self.__class__.__doc__)
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         # ファイルパス
         self.file_path: str = ""
@@ -50,6 +49,19 @@ class EditPdf:
         self.creation_date: DocumentInformation | None = None
         # メタデータの書き込み用の更新日
         self.modification_date: DocumentInformation | None = None
+
+    def append_init_log(self) -> bool:
+        """初期化のログを追加します"""
+        result: bool = False
+        try:
+            self.log.info(f"{self.__class__.__qualname__}: {self.__class__.__doc__}")
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
 
     def read_file(self, file_path: str = "") -> bool:
         """ファイルを読み込みます"""
