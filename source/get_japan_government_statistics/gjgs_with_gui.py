@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QLabel,
     QLayout,
@@ -53,7 +54,7 @@ class GetIdsWorker(QObject):
         self.obj_of_cls.lst_of_data_type = lst_of_data_type
         self.obj_of_cls.lst_of_get_type = lst_of_get_type
 
-    def run(self):
+    def run(self) -> None:
         """実行します"""
         result: bool = False
         loop: asyncio.AbstractEventLoop | None = None
@@ -61,31 +62,30 @@ class GetIdsWorker(QObject):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             result = loop.run_until_complete(self.obj_of_cls.write_stats_data_ids_to_file())
-            if result:
-                self.logger.info("統計表IDの取得が完了しました。")
-            else:
-                self.logger.warning("統計表IDの取得がキャンセルされました。")
         except asyncio.CancelledError:
             result = False
-            self.logger.warning("処理がキャンセルされました。")
-        except httpx.HTTPStatusError:
-            self.logger.error("HTTPStatusError")
-            self.error.emit("HTTPStatusError")
-        except httpx.RequestError:
-            self.logger.error("RequestError")
-            self.error.emit("RequestError")
+        except httpx.HTTPStatusError as e:
+            self.logger.error(str(e))
+            self.error.emit(str(e))
+        except httpx.RequestError as e:
+            self.logger.error(str(e))
+            self.error.emit(str(e))
         except Exception as e:
-            self.logger.error(f"Exception: \n{str(e)}")
-            self.error.emit(f"Exception: \n{str(e)}")
+            self.logger.error(str(e))
+            self.error.emit(str(e))
         else:
             pass
         finally:
             if loop is not None:
                 loop.run_until_complete(loop.shutdown_asyncgens())
                 loop.close()
+        if result:
+            self.logger.info("統計表IDの取得が完了しました。")
+        else:
+            self.logger.warning("統計表IDの取得がキャンセルされました。")
         self.finished.emit(result)
 
-    def cancel(self):
+    def cancel(self) -> None:
         """キャンセルします"""
         self.cancel_event.set()
 
@@ -112,12 +112,12 @@ class MainApp_Of_GJGS(QMainWindow):
             self._show_info(f"ログファイルは、\n{self.obj_of_lt.file_path_of_log}\nに出力されました。")
         super().closeEvent(event)
 
-    def _show_info(self, msg: str):
+    def _show_info(self, msg: str) -> None:
         """情報を表示します"""
         QMessageBox.information(self, "情報", msg)
         self.obj_of_lt.logger.info(msg)
 
-    def _show_result(self, label: str | None, success: bool):
+    def _show_result(self, label: str | None, success: bool) -> None:
         """結果を表示します"""
         QMessageBox.information(self, "結果", f"{label} => {'成功' if success else '失敗'}しました。")
         if success:
@@ -125,13 +125,13 @@ class MainApp_Of_GJGS(QMainWindow):
         else:
             self.obj_of_lt.logger.error(f"{label} => 失敗しました。")
 
-    def _show_error(self, msg: str):
+    def _show_error(self, msg: str) -> None:
         """エラーを表示します"""
         QMessageBox.warning(self, "エラー", msg)
         self.obj_of_lt.logger.warning(msg)
 
     @Slot(str)
-    def _append_log(self, msg: str):
+    def _append_log(self, msg: str) -> None:
         """ログを追加します"""
         self.log_area.append(msg)
 
@@ -172,114 +172,118 @@ class MainApp_Of_GJGS(QMainWindow):
             # 主要
             self.main_layout: QVBoxLayout = QVBoxLayout(central)
             # 上
-            self.first_element_title_area: QHBoxLayout = QHBoxLayout()
-            self.main_layout.addLayout(self.first_element_title_area)
-            self.first_element_title_area.addWidget(QLabel("統計表ID"))
-            self.first_element_title_area.addWidget(QLabel("ログ"))
             self.top_layout: QHBoxLayout = QHBoxLayout()
-            self.main_layout.addLayout(self.top_layout, 2)
-            # 左上
+            self.main_layout.addLayout(self.top_layout, stretch=2)
+            # 左上(統計表ID)
+            self.top_left_grp_bx: QGroupBox = QGroupBox(title="統計表ID")
+            self.layout_of_top_left: QVBoxLayout = QVBoxLayout(self.top_left_grp_bx)
             self.top_left_scroll_area: QScrollArea = QScrollArea()
             self.top_left_scroll_area.setWidgetResizable(True)
-            self.top_layout.addWidget(self.top_left_scroll_area, 1)
+            self.layout_of_top_left.addWidget(self.top_left_scroll_area)
+            self.top_layout.addWidget(self.top_left_grp_bx, stretch=1)
             self._setup_second_ui()
-            # 右上
-            top_right_scroll_area: QScrollArea = QScrollArea()
-            top_right_scroll_area.setWidgetResizable(True)
-            self.top_layout.addWidget(top_right_scroll_area, 1)
-            top_right_container: QWidget = QWidget()
-            self.top_right_container_layout: QVBoxLayout = QVBoxLayout(top_right_container)
-            top_right_scroll_area.setWidget(top_right_container)
+            # 右上(ログ)
+            self.top_right_grp_bx: QGroupBox = QGroupBox(title="ログ")
+            self.layout_of_top_right: QVBoxLayout = QVBoxLayout(self.top_right_grp_bx)
+            self.top_right_scroll_area: QScrollArea = QScrollArea()
+            self.top_right_scroll_area.setWidgetResizable(True)
+            self.top_right_container: QWidget = QWidget()
+            self.top_right_container_layout: QVBoxLayout = QVBoxLayout(self.top_right_container)
             self.log_area: QTextEdit = QTextEdit()
             self.log_area.setReadOnly(True)
             self.top_right_container_layout.addWidget(self.log_area)
+            self.top_right_scroll_area.setWidget(self.top_right_container)
+            self.layout_of_top_right.addWidget(self.top_right_scroll_area)
+            self.top_layout.addWidget(self.top_right_grp_bx, stretch=1)
             # 下
-            self.second_element_title_area: QHBoxLayout = QHBoxLayout()
-            self.main_layout.addLayout(self.second_element_title_area)
-            self.second_element_title_area.addWidget(QLabel("統計表"))
-            self.second_element_title_area.addWidget(QLabel("機能"))
             self.bottom_layout: QHBoxLayout = QHBoxLayout()
-            self.main_layout.addLayout(self.bottom_layout, 3)
-            # 統計表
-            self.table_scroll_area: QScrollArea = QScrollArea()
-            self.table_scroll_area.setWidgetResizable(True)
-            self.bottom_layout.addWidget(self.table_scroll_area, 1)
-            # 関数
-            func_scroll_area: QScrollArea = QScrollArea()
-            func_scroll_area.setWidgetResizable(True)
-            self.bottom_layout.addWidget(func_scroll_area, 1)
-            func_container: QWidget = QWidget()
-            func_container_layout: QVBoxLayout = QVBoxLayout(func_container)
-            func_scroll_area.setWidget(func_container)
-            func_area: QFormLayout = QFormLayout()
-            func_container_layout.addLayout(func_area)
+            self.main_layout.addLayout(self.bottom_layout, stretch=2)
+            # 左下(統計表)
+            self.bottom_left_grp_bx: QGroupBox = QGroupBox(title="統計表")
+            self.layout_of_bottom_left: QVBoxLayout = QVBoxLayout(self.bottom_left_grp_bx)
+            self.bottom_left_scroll_area: QScrollArea = QScrollArea()
+            self.bottom_left_scroll_area.setWidgetResizable(True)
+            self.layout_of_bottom_left.addWidget(self.bottom_left_scroll_area)
+            self.bottom_layout.addWidget(self.bottom_left_grp_bx, stretch=1)
+            # 右下(機能)
+            self.bottom_right_grp_bx: QGroupBox = QGroupBox(title="機能")
+            self.layout_of_bottom_right: QVBoxLayout = QVBoxLayout(self.bottom_right_grp_bx)
+            self.bottom_right_scroll_area: QScrollArea = QScrollArea()
+            self.bottom_right_scroll_area.setWidgetResizable(True)
+            self.bottom_right_container: QWidget = QWidget()
+            self.bottom_right_container_layout: QVBoxLayout = QVBoxLayout(self.bottom_right_container)
+            self.bottom_right_form: QFormLayout = QFormLayout()
+            self.bottom_right_container_layout.addLayout(self.bottom_right_form)
+            self.bottom_right_scroll_area.setWidget(self.bottom_right_container)
+            self.layout_of_bottom_right.addWidget(self.bottom_right_scroll_area)
+            self.bottom_layout.addWidget(self.bottom_right_grp_bx, stretch=1)
             # アプリケーションID
             self.app_id_text: QLineEdit = QLineEdit()
             self.app_id_text.editingFinished.connect(self._get_app_id)
-            func_area.addRow(QLabel("アプリケーションID: "), self.app_id_text)
+            self.bottom_right_form.addRow(QLabel("アプリケーションID: "), self.app_id_text)
             # データタイプ
             self.data_type_combo: QComboBox = QComboBox()
             for key, desc in self.obj_of_cls.dct_of_data_type.items():
                 self.data_type_combo.addItem(f"{key}: {desc}", userData=key)
             self.data_type_combo.currentIndexChanged.connect(self._get_data_type)
             self._get_data_type(0)
-            func_area.addRow(QLabel("データタイプ: "), self.data_type_combo)
+            self.bottom_right_form.addRow(QLabel("データタイプ: "), self.data_type_combo)
             # 取得方法
             self.get_type_combo: QComboBox = QComboBox()
             for key, desc in self.obj_of_cls.dct_of_get_type.items():
                 self.get_type_combo.addItem(f"{key}: {desc}", userData=key)
             self.get_type_combo.currentIndexChanged.connect(self._get_get_type)
             self._get_get_type(0)
-            func_area.addRow(QLabel("取得方法: "), self.get_type_combo)
+            self.bottom_right_form.addRow(QLabel("取得方法: "), self.get_type_combo)
             # 統計表IDの一覧を取得する
             self.get_ids_btn: QPushButton = QPushButton("統計表IDの一覧を取得する")
             self.get_ids_btn.clicked.connect(self.get_lst_of_ids)
             # 統計表IDの一覧の取得をキャンセルする
             self.cancel_getting_ids_btn: QPushButton = QPushButton("統計表IDの一覧の取得をキャンセルする")
             self.cancel_getting_ids_btn.clicked.connect(self.cancel_getting_lst_of_ids)
-            func_area.addRow(self.get_ids_btn, self.cancel_getting_ids_btn)
+            self.bottom_right_form.addRow(self.get_ids_btn, self.cancel_getting_ids_btn)
             # 統計表IDの一覧を表示する
             show_ids_btn: QPushButton = QPushButton("統計表IDの一覧を表示する")
-            func_area.addRow(show_ids_btn)
+            self.bottom_right_form.addRow(show_ids_btn)
             show_ids_btn.clicked.connect(self.show_lst_of_ids)
             # 統計表IDの一覧をフィルターにかける
             filter_ids_btn: QPushButton = QPushButton("統計表IDの一覧をフィルターにかける")
-            func_area.addRow(filter_ids_btn)
+            self.bottom_right_form.addRow(filter_ids_btn)
             filter_ids_btn.clicked.connect(self.filter_lst_of_ids)
             # フィルターのキーワード
             self.keyword_text: QPlainTextEdit = QPlainTextEdit()
             self.keyword_text.textChanged.connect(self._get_keyword)
-            func_area.addRow(QLabel("フィルターのキーワード\n(1行につき、1つのキーワード): "), self.keyword_text)
+            self.bottom_right_form.addRow(QLabel("フィルターのキーワード\n(1行につき、1つのキーワード): "), self.keyword_text)
             # 検索方法
             self.match_type_combo: QComboBox = QComboBox()
             for key, desc in self.obj_of_cls.dct_of_match_type.items():
                 self.match_type_combo.addItem(f"{key}: {desc}", userData=key)
             self.match_type_combo.currentIndexChanged.connect(self._get_match_type)
             self._get_match_type(0)
-            func_area.addRow(QLabel("検索方法: "), self.match_type_combo)
+            self.bottom_right_form.addRow(QLabel("検索方法: "), self.match_type_combo)
             # 抽出方法
             self.logic_type_combo: QComboBox = QComboBox()
             for key, desc in self.obj_of_cls.dct_of_logic_type.items():
                 self.logic_type_combo.addItem(f"{key}: {desc}", userData=key)
             self.logic_type_combo.currentIndexChanged.connect(self._get_logic_type)
             self._get_logic_type(0)
-            func_area.addRow(QLabel("抽出方法: "), self.logic_type_combo)
+            self.bottom_right_form.addRow(QLabel("抽出方法: "), self.logic_type_combo)
             # 指定の統計表を表示する
             show_table_btn: QPushButton = QPushButton("統計表を表示する")
-            func_area.addRow(show_table_btn)
+            self.bottom_right_form.addRow(show_table_btn)
             show_table_btn.clicked.connect(self.show_table)
             # 指定の統計表をフィルターにかける
             filter_table_btn: QPushButton = QPushButton("統計表をフィルターにかける")
-            func_area.addRow(filter_table_btn)
+            self.bottom_right_form.addRow(filter_table_btn)
             filter_table_btn.clicked.connect(self.filter_table)
             # 指定の統計表をCSVファイルに出力する
             output_btn: QPushButton = QPushButton("統計表を出力する")
-            func_area.addRow(output_btn)
+            self.bottom_right_form.addRow(output_btn)
             output_btn.clicked.connect(self.output_table)
             # クレジット
             credit_area: QVBoxLayout = QVBoxLayout()
             self.main_layout.addLayout(credit_area)
-            credit_notation: QLabel = QLabel(self.obj_of_cls.credit_text)
+            credit_notation: QLabel = QLabel("\n".join(self.obj_of_cls.credit_text))
             credit_area.addWidget(credit_notation)
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
@@ -290,7 +294,7 @@ class MainApp_Of_GJGS(QMainWindow):
         return result
 
     @Slot(QModelIndex)
-    def _get_id_from_lst(self, index: QModelIndex):
+    def _get_id_from_lst(self, index: QModelIndex) -> None:
         """一覧から統計表IDを取得します"""
         try:
             if index is None:
@@ -304,9 +308,9 @@ class MainApp_Of_GJGS(QMainWindow):
             c_of_stat_name: int = 1
             # 表題
             c_of_title: int = 2
-            self.obj_of_cls.STATS_DATA_ID = self.model.item(r, c_of_id).text()
-            self.obj_of_cls.STAT_NAME = self.model.item(r, c_of_stat_name).text()
-            self.obj_of_cls.TITLE = self.model.item(r, c_of_title).text()
+            self.obj_of_cls.STATS_DATA_ID = self.top_left_model.item(r, c_of_id).text()
+            self.obj_of_cls.STAT_NAME = self.top_left_model.item(r, c_of_stat_name).text()
+            self.obj_of_cls.TITLE = self.top_left_model.item(r, c_of_title).text()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -323,13 +327,13 @@ class MainApp_Of_GJGS(QMainWindow):
             self.top_left_container: QWidget = QWidget()
             self.top_left_container_layout: QVBoxLayout = QVBoxLayout(self.top_left_container)
             self.top_left_scroll_area.setWidget(self.top_left_container)
-            self.lst_of_ids: QTableView = QTableView()
-            self.top_left_container_layout.addWidget(self.lst_of_ids)
-            self.model: QStandardItemModel = QStandardItemModel()
+            self.top_left_table: QTableView = QTableView()
+            self.top_left_container_layout.addWidget(self.top_left_table)
+            self.top_left_model: QStandardItemModel = QStandardItemModel()
             # ヘッダーを追加する
-            self.model.setHorizontalHeaderLabels(self.obj_of_cls.header_of_ids_l)
-            self.lst_of_ids.setModel(self.model)
-            self.lst_of_ids.clicked.connect(self._get_id_from_lst)
+            self.top_left_model.setHorizontalHeaderLabels(self.obj_of_cls.header_of_ids_l)
+            self.top_left_table.setModel(self.top_left_model)
+            self.top_left_table.clicked.connect(self._get_id_from_lst)
         except Exception:
             raise
         else:
@@ -342,22 +346,22 @@ class MainApp_Of_GJGS(QMainWindow):
         """3番目のUser Interfaceを設定します"""
         result: bool = False
         try:
-            self.table_container: QWidget = QWidget()
-            self.table_container_layout: QVBoxLayout = QVBoxLayout(self.table_container)
-            self.table_scroll_area.setWidget(self.table_container)
-            self.stats_table: QTableView = QTableView(self)
-            self.table_container_layout.addWidget(QLabel(f"統計表ID: {self.obj_of_cls.STATS_DATA_ID}"))
-            self.table_container_layout.addWidget(QLabel(f"統計名: {self.obj_of_cls.STAT_NAME}"))
-            self.table_container_layout.addWidget(QLabel(f"表題: {self.obj_of_cls.TITLE}"))
-            self.table_container_layout.addWidget(self.stats_table)
-            model: QStandardItemModel = QStandardItemModel()
+            self.bottom_left_container: QWidget = QWidget()
+            self.bottom_left_container_layout: QVBoxLayout = QVBoxLayout(self.bottom_left_container)
+            self.bottom_left_scroll_area.setWidget(self.bottom_left_container)
+            self.bottom_left_table: QTableView = QTableView(self)
+            self.bottom_left_container_layout.addWidget(QLabel(f"統計表ID: {self.obj_of_cls.STATS_DATA_ID}"))
+            self.bottom_left_container_layout.addWidget(QLabel(f"統計名: {self.obj_of_cls.STAT_NAME}"))
+            self.bottom_left_container_layout.addWidget(QLabel(f"表題: {self.obj_of_cls.TITLE}"))
+            self.bottom_left_container_layout.addWidget(self.bottom_left_table)
+            self.bottom_left_model: QStandardItemModel = QStandardItemModel()
             # ヘッダーを追加する
-            model.setHorizontalHeaderLabels(self.obj_of_cls.df.columns.tolist())
+            self.bottom_left_model.setHorizontalHeaderLabels(self.obj_of_cls.df.columns.tolist())
             for r in self.obj_of_cls.df.itertuples(index=False):
                 items = [QStandardItem(str(v)) for v in r]
-                model.appendRow(items)
-            self.stats_table.setModel(model)
-            self.stats_table.resizeColumnsToContents()
+                self.bottom_left_model.appendRow(items)
+            self.bottom_left_table.setModel(self.bottom_left_model)
+            self.bottom_left_table.resizeColumnsToContents()
         except Exception:
             raise
         else:
@@ -448,7 +452,7 @@ class MainApp_Of_GJGS(QMainWindow):
         return result
 
     @Slot()
-    def _get_app_id(self):
+    def _get_app_id(self) -> None:
         """アプリケーションIDを取得します"""
         try:
             tmp: str = self.app_id_text.text().strip()
@@ -463,7 +467,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot(int)
-    def _get_data_type(self, index: int):
+    def _get_data_type(self, index: int) -> None:
         """データタイプを取得します"""
         try:
             key: str = self.data_type_combo.itemData(index)
@@ -477,7 +481,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot(int)
-    def _get_get_type(self, index: int):
+    def _get_get_type(self, index: int) -> None:
         """取得方法を取得します"""
         try:
             key: str = self.get_type_combo.itemData(index)
@@ -491,7 +495,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot(int)
-    def _get_match_type(self, index: int):
+    def _get_match_type(self, index: int) -> None:
         """検索方法を取得します"""
         try:
             key: str = self.match_type_combo.itemData(index)
@@ -505,7 +509,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot(int)
-    def _get_logic_type(self, index: int):
+    def _get_logic_type(self, index: int) -> None:
         """抽出方法を取得します"""
         try:
             key: str = self.logic_type_combo.itemData(index)
@@ -519,7 +523,7 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot()
-    def _get_keyword(self):
+    def _get_keyword(self) -> None:
         """キーワードを取得します"""
         try:
             self.obj_of_cls.lst_of_keyword = [line.strip() for line in self.keyword_text.toPlainText().splitlines() if line.strip()]
@@ -531,14 +535,14 @@ class MainApp_Of_GJGS(QMainWindow):
             pass
 
     @Slot(str)
-    def _show_error_on_getting_ids(self, error: str):
+    def _show_error_on_getting_ids(self, error: str) -> None:
         """統計表IDの一覧を取得する際のエラーを表示します"""
         # 取得ボタンを有効化する
         self.get_ids_btn.setEnabled(True)
         self._show_error(error)
 
     @Slot(bool)
-    def _show_result_after_getting_ids(self, flag: bool):
+    def _show_result_after_getting_ids(self, flag: bool) -> None:
         """統計表IDの一覧を取得した後の結果を表示します"""
         # キャンセルボタンを無効化する
         self.cancel_getting_ids_btn.setEnabled(False)
@@ -547,7 +551,7 @@ class MainApp_Of_GJGS(QMainWindow):
         self._show_result(self.get_lst_of_ids.__doc__, flag)
 
     @Slot()
-    def _cleanup_after_getting_ids(self):
+    def _cleanup_after_getting_ids(self) -> None:
         """統計表IDの一覧を取得した後にクリーンアップします"""
         self.worker_of_getting_ids = None
         self.thread_of_getting_ids = None
@@ -591,7 +595,7 @@ class MainApp_Of_GJGS(QMainWindow):
         return result
 
     @Slot()
-    def cancel_getting_lst_of_ids(self):
+    def cancel_getting_lst_of_ids(self) -> None:
         """統計表IDの一覧の取得をキャンセルします"""
         if self.worker_of_getting_ids is not None:
             self.worker_of_getting_ids.cancel()
@@ -613,8 +617,8 @@ class MainApp_Of_GJGS(QMainWindow):
                 for chunk in reader:
                     for _, row in chunk.iterrows():
                         items: list = [QStandardItem(str(v)) for v in row]
-                        self.model.appendRow(items)
-            self.lst_of_ids.resizeColumnsToContents()
+                        self.top_left_model.appendRow(items)
+            self.top_left_table.resizeColumnsToContents()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -640,8 +644,8 @@ class MainApp_Of_GJGS(QMainWindow):
                     df: DataFrame = self.obj_of_cls.filter_df(chunk)
                     for _, row in df.iterrows():
                         items: list = [QStandardItem(str(v)) for v in row]
-                        self.model.appendRow(items)
-            self.lst_of_ids.resizeColumnsToContents()
+                        self.top_left_model.appendRow(items)
+            self.top_left_table.resizeColumnsToContents()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
         else:
@@ -658,7 +662,7 @@ class MainApp_Of_GJGS(QMainWindow):
             if self.obj_of_cls.STATS_DATA_ID == "":
                 raise Exception("統計表IDを選択してください。")
             self._check_first_form()
-            self._clear_widget(self.table_scroll_area)
+            self._clear_widget(self.bottom_left_scroll_area)
             # 取得方法は同期のみ
             self.get_type_combo.setCurrentIndex(1)
             self.obj_of_cls.get_table_from_api()
@@ -680,7 +684,7 @@ class MainApp_Of_GJGS(QMainWindow):
             if self.obj_of_cls.df is None:
                 raise Exception("統計表を表示してください。")
             self._check_second_form()
-            self._clear_widget(self.table_scroll_area)
+            self._clear_widget(self.bottom_left_scroll_area)
             self.obj_of_cls.df = self.obj_of_cls.filter_df(self.obj_of_cls.df)
             self._setup_third_ui()
         except Exception as e:

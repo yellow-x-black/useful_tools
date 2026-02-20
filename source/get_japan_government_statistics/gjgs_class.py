@@ -27,12 +27,12 @@ class GetJapanGovernmentStatistics:
         self.log: Logger = logger
         self.log.info(self.__class__.__doc__)
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
-        self.credit_text: str = (
-            "クレジット表示\n"
-            "このサービスは、政府統計総合窓口(e-Stat)のAPI機能を使用していますが、"
-            "サービスの内容は国によって保証されたものではありません。"
+        self.credit_text: tuple = (
+            "クレジット表示",
+            "このサービスは、政府統計総合窓口(e-Stat)のAPI機能を使用していますが、",
+            "サービスの内容は国によって保証されたものではありません。",
         )
-        self.log.info(self.credit_text)
+        self.log.info("\n".join(self.credit_text))
         # 統計表IDの一覧を取得する方法
         self.dct_of_get_type: dict = {
             "非同期": "処理の実行中に待ち時間が発生しても、次の処理に進める方法",
