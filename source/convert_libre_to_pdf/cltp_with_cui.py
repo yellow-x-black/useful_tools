@@ -95,7 +95,7 @@ def main() -> bool:
         print(f"error: \n{str(e)}")
         return result
     else:
-        pass
+        obj_of_cls.append_init_log()
     finally:
         pass
     # 処理の本体部分
