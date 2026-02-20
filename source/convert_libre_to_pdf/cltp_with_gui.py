@@ -46,12 +46,12 @@ class MainApp_Of_CLTP(QMainWindow):
             self._show_info(f"ログファイルは、\n{self.obj_of_lt.file_path_of_log}\nに出力されました。")
         super().closeEvent(event)
 
-    def _show_info(self, msg: str):
+    def _show_info(self, msg: str) -> None:
         """情報を表示します"""
         QMessageBox.information(self, "情報", msg)
         self.obj_of_lt.logger.info(msg)
 
-    def _show_result(self, label: str | None, success: bool):
+    def _show_result(self, label: str | None, success: bool) -> None:
         """結果を表示します"""
         QMessageBox.information(self, "結果", f"{label} => {'成功' if success else '失敗'}しました。")
         if success:
@@ -59,13 +59,13 @@ class MainApp_Of_CLTP(QMainWindow):
         else:
             self.obj_of_lt.logger.error(f"{label} => 失敗しました。")
 
-    def _show_error(self, msg: str):
+    def _show_error(self, msg: str) -> None:
         """エラーを表示します"""
         QMessageBox.warning(self, "エラー", msg)
         self.obj_of_lt.logger.warning(msg)
 
     @Slot(str)
-    def _append_log(self, msg: str):
+    def _append_log(self, msg: str) -> None:
         """ログを追加します"""
         self.log_area.append(msg)
 
@@ -126,27 +126,27 @@ class MainApp_Of_CLTP(QMainWindow):
             main_container_layout.addRow(QLabel("概要: "))
             main_container_layout.addRow(overview_area)
             # 変換元
-            label_from: QLabel = QLabel("変換元のフォルダ: 未選択")
-            main_container_layout.addRow(label_from)
+            self.label_from: QLabel = QLabel("変換元のフォルダ: 未選択")
+            main_container_layout.addRow(self.label_from)
             btn_select_from: QPushButton = QPushButton("変換元のフォルダを選択する")
             main_container_layout.addRow(btn_select_from)
-            btn_select_from.clicked.connect(lambda *args, lbl=label_from: self.select_folder_from(lbl))
+            btn_select_from.clicked.connect(self.select_folder_from)
             btn_open_from: QPushButton = QPushButton("変換元のフォルダを開く")
             main_container_layout.addRow(btn_open_from)
-            btn_open_from.clicked.connect(lambda *args: self.open_explorer(self.obj_of_cls.folder_path_from))
+            btn_open_from.clicked.connect(self.open_explorer_on_folder_from)
             # 対象ファイルの一覧
             main_container_layout.addRow(QLabel("変換対象ファイルの一覧: "))
             self.lst_widget: QListWidget = QListWidget()
             main_container_layout.addRow(self.lst_widget)
             # 変換先
-            label_to: QLabel = QLabel("変換先のフォルダ: 未選択")
-            main_container_layout.addRow(label_to)
+            self.label_to: QLabel = QLabel("変換先のフォルダ: 未選択")
+            main_container_layout.addRow(self.label_to)
             btn_select_to: QPushButton = QPushButton("変換先のフォルダを選択する")
             main_container_layout.addRow(btn_select_to)
-            btn_select_to.clicked.connect(lambda *args, lbl=label_to: self.select_folder_to(lbl))
+            btn_select_to.clicked.connect(self.select_folder_to)
             btn_open_to: QPushButton = QPushButton("変換先のフォルダを開く")
             main_container_layout.addRow(btn_open_to)
-            btn_open_to.clicked.connect(lambda *args: self.open_explorer(self.obj_of_cls.folder_path_to))
+            btn_open_to.clicked.connect(self.open_explorer_on_folder_to)
             # 進行状況
             main_container_layout.addRow(QLabel("進行状況: "))
             self.progress_bar: QProgressBar = QProgressBar()
@@ -168,7 +168,27 @@ class MainApp_Of_CLTP(QMainWindow):
             pass
         return result
 
-    def select_folder_from(self, lbl: QLabel) -> bool:
+    def show_file_lst(self) -> bool:
+        """ファイル一覧を表示します"""
+        result: bool = False
+        try:
+            self.obj_of_cls.create_file_lst()
+            self.lst_widget.clear()
+            for f in self.obj_of_cls.filtered_lst_of_f:
+                file_p: Path = Path(f)
+                file_s: str = file_p.name
+                self.lst_widget.addItem(file_s)
+            self.progress_bar.setValue(0)
+        except Exception as e:
+            self._show_error(f"error: \n{str(e)}")
+        else:
+            result = True
+        finally:
+            pass
+        return result
+
+    @Slot()
+    def select_folder_from(self) -> bool:
         """変換元のフォルダを選択します"""
         result: bool = False
         try:
@@ -176,7 +196,7 @@ class MainApp_Of_CLTP(QMainWindow):
             folder_p: Path = Path(self.obj_of_cls.folder_path_from).expanduser()
             self.obj_of_cls.folder_path_from = str(folder_p)
             if self.obj_of_cls.folder_path_from:
-                lbl.setText(f"変換元フォルダ: {self.obj_of_cls.folder_path_from}")
+                self.label_from.setText(f"変換元フォルダ: {self.obj_of_cls.folder_path_from}")
                 if self.obj_of_cls.folder_path_to:
                     self.show_file_lst()
         except Exception as e:
@@ -187,7 +207,8 @@ class MainApp_Of_CLTP(QMainWindow):
             pass
         return result
 
-    def select_folder_to(self, lbl: QLabel) -> bool:
+    @Slot()
+    def select_folder_to(self) -> bool:
         """変換先のフォルダを選択します"""
         result: bool = False
         try:
@@ -195,7 +216,7 @@ class MainApp_Of_CLTP(QMainWindow):
             folder_p: Path = Path(self.obj_of_cls.folder_path_to).expanduser()
             self.obj_of_cls.folder_path_to = str(folder_p)
             if self.obj_of_cls.folder_path_to:
-                lbl.setText(f"変換先フォルダ: {self.obj_of_cls.folder_path_to}")
+                self.label_to.setText(f"変換先フォルダ: {self.obj_of_cls.folder_path_to}")
                 if self.obj_of_cls.folder_path_from:
                     self.show_file_lst()
         except Exception as e:
@@ -227,25 +248,17 @@ class MainApp_Of_CLTP(QMainWindow):
             pass
         return result
 
-    def show_file_lst(self) -> bool:
-        """ファイル一覧を表示します"""
-        result: bool = False
-        try:
-            self.obj_of_cls.create_file_lst()
-            self.lst_widget.clear()
-            for f in self.obj_of_cls.filtered_lst_of_f:
-                file_p: Path = Path(f)
-                file_s: str = file_p.name
-                self.lst_widget.addItem(file_s)
-            self.progress_bar.setValue(0)
-        except Exception as e:
-            self._show_error(f"error: \n{str(e)}")
-        else:
-            result = True
-        finally:
-            pass
-        return result
+    @Slot()
+    def open_explorer_on_folder_from(self) -> None:
+        """変換元のフォルダでエクスプローラーを開きます"""
+        self.open_explorer(self.obj_of_cls.folder_path_from)
 
+    @Slot()
+    def open_explorer_on_folder_to(self) -> None:
+        """変換先のフォルダでエクスプローラーを開きます"""
+        self.open_explorer(self.obj_of_cls.folder_path_to)
+
+    @Slot()
     def convert_all_files(self) -> bool:
         """全てのファイルを一括変換します"""
         result: bool = False
