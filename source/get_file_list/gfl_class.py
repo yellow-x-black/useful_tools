@@ -10,7 +10,6 @@ class GetFileList:
     def __init__(self, logger: Logger):
         """初期化します"""
         self.log: Logger = logger
-        self.log.info(self.__class__.__doc__)
         # フォルダパス
         self.folder_path: str = ""
         # 再帰的に検索するかどうか
@@ -23,6 +22,19 @@ class GetFileList:
         # ファイルの数
         self.num_of_f_before: int = 0
         self.num_of_f_after: int = 0
+
+    def append_init_log(self) -> bool:
+        """初期化のログを追加します"""
+        result: bool = False
+        try:
+            self.log.info(f"{self.__class__.__qualname__}: {self.__class__.__doc__}")
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
 
     def search_directly_under_folder(self) -> bool:
         """フォルダ直下を検索します"""

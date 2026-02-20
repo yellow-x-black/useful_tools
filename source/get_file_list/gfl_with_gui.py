@@ -34,10 +34,10 @@ class MainApp_Of_GFL(QMainWindow):
         """初期化します"""
         super().__init__()
         self.obj_of_lt: LogTools = LogTools()
-        self.obj_of_cls: GetFileList = GetFileList(self.obj_of_lt.logger)
-        self._setup_ui()
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         self.obj_of_pft: PlatformTools = PlatformTools()
+        self.obj_of_cls: GetFileList = GetFileList(self.obj_of_lt.logger)
+        self._setup_ui()
         self._setup_log()
 
     def closeEvent(self, event):
@@ -91,6 +91,7 @@ class MainApp_Of_GFL(QMainWindow):
             self._show_error(f"error: \n{str(e)}")
         else:
             result = True
+            self.obj_of_cls.append_init_log()
         finally:
             pass
         return result

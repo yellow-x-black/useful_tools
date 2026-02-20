@@ -85,8 +85,9 @@ def main() -> bool:
     finally:
         pass
     # 処理の本体部分
-    obj_with_cui: GFL_With_Cui = GFL_With_Cui()
     obj_of_cls: GetFileList = GetFileList(obj_of_lt.logger)
+    obj_of_cls.append_init_log()
+    obj_with_cui: GFL_With_Cui = GFL_With_Cui()
     while True:
         result = False
         try:
