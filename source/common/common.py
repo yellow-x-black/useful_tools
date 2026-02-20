@@ -50,7 +50,7 @@ class LogTools:
         result: bool = False
         try:
             self.file_handler: FileHandler = logging.FileHandler(file_path, mode="w", encoding="utf-8")
-            self.file_handler.setLevel(logging.INFO)
+            self.file_handler.setLevel(logging.DEBUG)
             self.str_of_file_formatter: str = "%(message)s - [%(levelname)s] - (%(filename)s) - %(asctime)s"
             self.file_formatter: Formatter = logging.Formatter(self.str_of_file_formatter)
             self.file_handler.setFormatter(self.file_formatter)
