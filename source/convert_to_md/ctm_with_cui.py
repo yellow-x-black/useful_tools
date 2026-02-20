@@ -88,8 +88,9 @@ def main() -> bool:
     finally:
         pass
     # 処理の本体部分
-    obj_with_cui: CTM_With_Cui = CTM_With_Cui()
     obj_of_cls: ConvertToMd = ConvertToMd(obj_of_lt.logger)
+    obj_of_cls.append_init_log()
+    obj_with_cui: CTM_With_Cui = CTM_With_Cui()
     while True:
         result = False
         try:

@@ -13,7 +13,6 @@ class ConvertToMd:
     def __init__(self, logger: Logger):
         """初期化します"""
         self.log: Logger = logger
-        self.log.info(self.__class__.__doc__)
         # 拡張子の辞書
         self.file_types: dict = {
             "PDF": [".pdf"],
@@ -27,16 +26,6 @@ class ConvertToMd:
         }
         # 拡張子のリスト
         self.valid_exts: list = sum(self.file_types.values(), [])
-        # 拡張子をログに出力する
-        self.log.info("以下が変換元に指定できるファイルの拡張子の一覧です。\n")
-        for key, info in self.file_types.items():
-            values: str = ""
-            for value in info:
-                values += f"{value}, "
-            values = values.rstrip(", ")
-            self.log.info(f"{key}: {values}")
-        # 拡張子をログに出力した後は、改行する
-        self.log.info("")
         # 変換元のフォルダパス
         self.folder_path_from: str = ""
         # 変換先のフォルダパス
@@ -59,6 +48,28 @@ class ConvertToMd:
         self.success: int = 0
         # すべてのファイルを変換できたかどうか
         self.complete: bool = False
+
+    def append_init_log(self) -> bool:
+        """初期化のログを追加します"""
+        result: bool = False
+        try:
+            self.log.info(f"{self.__class__.__qualname__}: {self.__class__.__doc__}")
+            self.log.info("以下が変換元に指定できるファイルの拡張子の一覧です。\n")
+            for key, info in self.file_types.items():
+                values: str = ""
+                for value in info:
+                    values += f"{value}, "
+                values = values.rstrip(", ")
+                self.log.info(f"{key}: {values}")
+            # 拡張子をログに出力した後は、改行する
+            self.log.info("")
+        except Exception:
+            raise
+        else:
+            result = True
+        finally:
+            pass
+        return result
 
     def _set_file_path(self) -> bool:
         """ファイルパスを設定します"""
