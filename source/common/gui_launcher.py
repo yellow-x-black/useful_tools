@@ -42,15 +42,15 @@ class MainApp_Of_Gui_Launcher(QMainWindow):
         """終了します"""
         super().closeEvent(event)
 
-    def _show_info(self, msg: str):
+    def _show_info(self, msg: str) -> None:
         """情報を表示します"""
         QMessageBox.information(self, "情報", msg)
 
-    def _show_result(self, label: str | None, success: bool):
+    def _show_result(self, label: str | None, success: bool) -> None:
         """結果を表示します"""
         QMessageBox.information(self, "結果", f"{label} => {'成功' if success else '失敗'}しました。")
 
-    def _show_error(self, msg: str):
+    def _show_error(self, msg: str) -> None:
         """エラーを表示します"""
         QMessageBox.warning(self, "エラー", msg)
 
