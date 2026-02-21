@@ -1,6 +1,18 @@
 # useful_tools
 > ![social_preview](https://res.cloudinary.com/yellow-x-black/image/upload/v1764309538/public_python_tr3ue0.svg)
 * ***Please read Wiki.***
+## **from creator**
+
+Support this project!
+
+このツールがあなたの業務の役に立ったら、ぜひ`Star`をお願いします！
+
+個人の情熱で開発を続けています。あなたの1クリックが、継続的なアップデートとバグ修正の大きなモチベーションになります。
+
+If this tool helps you, please give it a `Star`!
+
+It keeps me motivated to maintain and improve this open-source project.
+
 ## creations
 ### convert_libre_to_pdf(CLTP)
 * You can convert Excel, Word, Powerpoint, Calc, Writer, Impress files to pdf files with LibreOffice.
