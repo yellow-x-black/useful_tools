@@ -75,7 +75,7 @@ class GJGS_With_Cui:
         lst: list = []
         try:
             while True:
-                text: str = input(msg).strip()
+                text: str = input(f"{msg}: ").strip()
                 lst.append(text)
                 keep: bool = self._input_bool("入力する文字列は、まだありますか？")
                 if not keep:
@@ -194,9 +194,9 @@ async def main() -> bool:
             obj_of_cls.lst_of_match_type = obj_with_cui._select_element(obj_of_cls.dct_of_match_type)
             if obj_with_cui._input_bool("フィルターをかけますか？"):
                 obj_of_cls.lst_of_keyword = obj_with_cui._input_lst_of_text("抽出するキーワードを入力してください。")
-                if len(obj_of_cls.lst_of_keyword) > 1:
+                if len(obj_of_cls.lst_of_keyword) > 0:
                     obj_of_cls.lst_of_logic_type = obj_with_cui._select_element(obj_of_cls.dct_of_logic_type)
-                obj_of_cls.df = obj_of_cls.filter_df(obj_of_cls.df)
+                obj_of_cls.pandas_df = obj_of_cls.filter_pandas_df(obj_of_cls.pandas_df)
             obj_of_cls.show_table()
             if obj_with_cui._input_bool(f"{obj_of_cls.output_table_to_csv.__doc__} => 行いますか？"):
                 obj_of_cls.output_table_to_csv()

@@ -7,7 +7,6 @@ from threading import Event
 
 import httpx
 import pandas
-from pandas import DataFrame
 from pandas.io.parsers import TextFileReader
 from PySide6.QtCore import QModelIndex, QObject, Qt, QThread, Signal, Slot
 from PySide6.QtGui import QFont, QFontDatabase, QStandardItem, QStandardItemModel
@@ -357,8 +356,8 @@ class MainApp_Of_GJGS(QMainWindow):
             self.bottom_left_container_layout.addWidget(self.bottom_left_table)
             self.bottom_left_model: QStandardItemModel = QStandardItemModel()
             # ヘッダーを追加する
-            self.bottom_left_model.setHorizontalHeaderLabels(self.obj_of_cls.df.columns.tolist())
-            for r in self.obj_of_cls.df.itertuples(index=False):
+            self.bottom_left_model.setHorizontalHeaderLabels(self.obj_of_cls.pandas_df.columns.tolist())
+            for r in self.obj_of_cls.pandas_df.itertuples(index=False):
                 items = [QStandardItem(str(v)) for v in r]
                 self.bottom_left_model.appendRow(items)
             self.bottom_left_table.setModel(self.bottom_left_model)
@@ -642,8 +641,8 @@ class MainApp_Of_GJGS(QMainWindow):
             for csv_file in csv_files:
                 reader: TextFileReader = pandas.read_csv(filepath_or_buffer=str(csv_file), chunksize=1, dtype=str)
                 for chunk in reader:
-                    df: DataFrame = self.obj_of_cls.filter_df(chunk)
-                    for _, row in df.iterrows():
+                    pandas_df: pandas.DataFrame = self.obj_of_cls.filter_pandas_df(chunk)
+                    for _, row in pandas_df.iterrows():
                         items: list = [QStandardItem(str(v)) for v in row]
                         self.top_left_model.appendRow(items)
             self.top_left_table.resizeColumnsToContents()
@@ -682,11 +681,11 @@ class MainApp_Of_GJGS(QMainWindow):
         """指定の統計表をフィルターにかけます"""
         result: bool = False
         try:
-            if self.obj_of_cls.df is None:
+            if self.obj_of_cls.pandas_df is None:
                 raise Exception("統計表を表示してください。")
             self._check_second_form()
             self._clear_widget(self.bottom_left_scroll_area)
-            self.obj_of_cls.df = self.obj_of_cls.filter_df(self.obj_of_cls.df)
+            self.obj_of_cls.pandas_df = self.obj_of_cls.filter_pandas_df(self.obj_of_cls.pandas_df)
             self._setup_third_ui()
         except Exception as e:
             self._show_error(f"error: \n{str(e)}")
@@ -702,7 +701,7 @@ class MainApp_Of_GJGS(QMainWindow):
         """指定の統計表をファイルに出力します"""
         result: bool = False
         try:
-            if self.obj_of_cls.df is None:
+            if self.obj_of_cls.pandas_df is None:
                 raise Exception("統計表を表示してください。")
             self.obj_of_cls.output_table_to_csv()
         except Exception as e:
