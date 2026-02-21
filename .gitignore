@@ -7,4 +7,3 @@ dist/
 wheels/
 *cache*/
 .venv/
-uv.lock
