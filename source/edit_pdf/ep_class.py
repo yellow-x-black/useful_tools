@@ -18,10 +18,10 @@ class EditPdf:
         self.obj_of_dt2: DatetimeTools = DatetimeTools()
         # ファイルパス
         self.file_path: str = ""
-        self.reader: PdfReader = None
+        self.reader: PdfReader | None = None
         # ページ数
         self.num_of_pages: int = 0
-        self.writer: PdfWriter = None
+        self.writer: PdfWriter | None = None
         self.metadata_of_reader: DocumentInformation | None = None
         self.metadata_of_writer: dict = {}
         # ファイルの読み込みが初回かどうか判定する
@@ -90,6 +90,8 @@ class EditPdf:
         """ファイルを暗号化します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             self.log.info(f"password: {password}")
             self.reader = PdfReader(self.file_path)
@@ -111,6 +113,8 @@ class EditPdf:
         """ファイルを復号化します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             self.log.info(f"password: {password}")
             self.reader = PdfReader(self.file_path)
@@ -132,6 +136,8 @@ class EditPdf:
         """メタデータを取得します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             for key in self.fields.keys():
                 value: Any = getattr(self.metadata_of_reader, key, None)
@@ -149,6 +155,8 @@ class EditPdf:
         """メタデータを書き込みます"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             self.writer = PdfWriter()
             for page in self.reader.pages:
@@ -212,6 +220,8 @@ class EditPdf:
         """ページを抽出します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             # ファイルパスを退避させる
             file_path_of_tmp: str = self.file_path
             b: int = begin_page - 1
@@ -252,6 +262,8 @@ class EditPdf:
         """ページを削除します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             # ファイルパスを退避させる
             file_path_of_tmp: str = self.file_path
             b: int = begin_page - 1
@@ -293,6 +305,8 @@ class EditPdf:
         """テキストを抽出します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             lst_of_text_in_pages: list = []
             b: int = begin_page - 1
@@ -316,6 +330,8 @@ class EditPdf:
         """ページを時計回りで回転します"""
         result: bool = False
         try:
+            if self.reader is None:
+                raise Exception("ファイルを読み込んでください。")
             self.log.info(f"対象のファイルパス: {self.file_path}")
             self.writer = PdfWriter()
             for p in range(self.num_of_pages):
