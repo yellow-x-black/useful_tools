@@ -191,12 +191,16 @@ async def main() -> bool:
             # 取得方法は同期のみ
             obj_of_cls.lst_of_get_type = list(list(obj_of_cls.dct_of_get_type.items())[1])
             obj_of_cls.get_table_from_api()
-            obj_of_cls.lst_of_match_type = obj_with_cui._select_element(obj_of_cls.dct_of_match_type)
+            if obj_of_cls.pd_df is None:
+                raise Exception("統計表IDを入力してください。")
             if obj_with_cui._input_bool("フィルターをかけますか？"):
+                obj_of_cls.lst_of_match_type = obj_with_cui._select_element(obj_of_cls.dct_of_match_type)
                 obj_of_cls.lst_of_keyword = obj_with_cui._input_lst_of_text("抽出するキーワードを入力してください。")
-                if len(obj_of_cls.lst_of_keyword) > 0:
+                if len(obj_of_cls.lst_of_keyword) == 1:
+                    obj_of_cls.lst_of_logic_type = list(list(obj_of_cls.dct_of_logic_type.items())[0])
+                else:
                     obj_of_cls.lst_of_logic_type = obj_with_cui._select_element(obj_of_cls.dct_of_logic_type)
-                obj_of_cls.pandas_df = obj_of_cls.filter_pandas_df(obj_of_cls.pandas_df)
+                obj_of_cls.pd_df = obj_of_cls.filter_pd_df(obj_of_cls.pd_df)
             obj_of_cls.show_table()
             if obj_with_cui._input_bool(f"{obj_of_cls.output_table_to_csv.__doc__} => 行いますか？"):
                 obj_of_cls.output_table_to_csv()

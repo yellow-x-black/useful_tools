@@ -8,12 +8,12 @@ import sys
 from logging import Logger
 from pathlib import Path
 from threading import Event
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, cast
 from xml.etree import ElementTree
 
 import httpx
-import pandas
-import polars
+import pandas as pd
+import polars as pl
 from tabulate import tabulate
 
 from source.common.common import DatetimeTools
@@ -46,7 +46,6 @@ class GetJapanGovernmentStatistics:
         }
         # 検索方法
         self.dct_of_match_type: dict = {
-            "検索しない": "なし",
             "部分一致": "フィールドの値にキーワードが含まれている",
             "完全一致": "フィールドの値がキーワードと完全に一致している",
         }
@@ -85,7 +84,7 @@ class GetJapanGovernmentStatistics:
         # DataFrameの件数
         self.DATA_COUNT: int = 0
         # 指定の統計表のデータフレーム
-        self.pandas_df: pandas.DataFrame = None
+        self.pd_df: pd.DataFrame | None = None
         # 処理をキャンセルするかどうか
         self.cancel_event: Event | None = cancel_event
         # exe化されている場合とそれ以外を切り分ける
@@ -367,7 +366,7 @@ class GetJapanGovernmentStatistics:
             }
             return params
 
-        def _with_xml(client: httpx.Client, dct_of_params: dict) -> pandas.DataFrame:
+        def _with_xml(client: httpx.Client, dct_of_params: dict) -> pd.DataFrame:
             """XMLでデータを取得します"""
             try:
                 id_url: str = f"http://api.e-stat.go.jp/rest/{self.VERSION}/app/getStatsData"
@@ -396,7 +395,7 @@ class GetJapanGovernmentStatistics:
                     # VALUEのテキストを追加する
                     row["値"] = (element.text or "").strip()
                     rows.append(row)
-                pandas_df: pandas.DataFrame = pandas.DataFrame(rows)
+                pd_df: pd.DataFrame = pd.DataFrame(rows)
                 # 列名を日本語に変換する
                 id2name: dict = {}
                 for obj in root.findall(".//CLASS_OBJ"):
@@ -404,10 +403,10 @@ class GetJapanGovernmentStatistics:
                     obj_name: str = obj.attrib.get("name", obj_id)
                     id2name[obj_id] = obj_name
                 id2name["unit"] = "単位"
-                pandas_df.rename(columns=id2name, inplace=True)
+                pd_df.rename(columns=id2name, inplace=True)
                 # 値列を数値型に変換する
-                if "値" in pandas_df.columns:
-                    pandas_df["値"] = pandas.to_numeric(pandas_df["値"], errors="coerce")
+                if "値" in pd_df.columns:
+                    pd_df["値"] = pd.to_numeric(pd_df["値"], errors="coerce")
             except Exception:
                 # デバッグ
                 self.log.debug(f"error: {_with_xml.__name__}")
@@ -417,9 +416,9 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 pass
-            return pandas_df
+            return pd_df
 
-        def _with_json(client: httpx.Client, dct_of_params: dict) -> pandas.DataFrame:
+        def _with_json(client: httpx.Client, dct_of_params: dict) -> pd.DataFrame:
             """JSONでデータを取得します"""
             try:
                 id_url: str = f"http://api.e-stat.go.jp/rest/{self.VERSION}/app/json/getStatsData"
@@ -457,10 +456,10 @@ class GetJapanGovernmentStatistics:
                         else:
                             row[k] = v
                     translated_rows.append(row)
-                pandas_df: pandas.DataFrame = pandas.DataFrame(translated_rows)
+                pd_df: pd.DataFrame = pd.DataFrame(translated_rows)
                 # 値列を数値型に変換する
-                if "値" in pandas_df.columns:
-                    pandas_df["値"] = pandas.to_numeric(pandas_df["値"], errors="coerce")
+                if "値" in pd_df.columns:
+                    pd_df["値"] = pd.to_numeric(pd_df["値"], errors="coerce")
             except Exception:
                 # デバッグ
                 self.log.debug(f"error: {_with_json.__name__}")
@@ -470,9 +469,9 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 pass
-            return pandas_df
+            return pd_df
 
-        def _with_csv(client: httpx.Client, dct_of_params: dict) -> pandas.DataFrame:
+        def _with_csv(client: httpx.Client, dct_of_params: dict) -> pd.DataFrame:
             """CSVでデータを取得します"""
             try:
                 id_url: str = f"http://api.e-stat.go.jp/rest/{self.VERSION}/app/getSimpleStatsData"
@@ -491,8 +490,8 @@ class GetJapanGovernmentStatistics:
                 header_cols: list[str] = [h.strip('"') for h in lines[value_idx + 1].split(",")]
                 # データ本体を文字列として抽出する
                 csv_body: str = "\n".join(lines[value_idx + 2 :])
-                pandas_df: pandas.DataFrame = pandas.read_csv(io.StringIO(csv_body), header=None)
-                pandas_df.columns = header_cols
+                pd_df: pd.DataFrame = pd.read_csv(io.StringIO(csv_body), header=None)
+                pd_df.columns = header_cols
                 # 列名を日本語に置換し、不要な英語コード列を削除する
                 rename_map: dict = {}
                 drop_cols: list = []
@@ -512,11 +511,11 @@ class GetJapanGovernmentStatistics:
                     else:
                         rename_map[eng] = eng
                     i += 1
-                pandas_df = pandas_df.rename(columns=rename_map)
-                pandas_df = pandas_df.drop(columns=drop_cols)
+                pd_df = pd_df.rename(columns=rename_map)
+                pd_df = pd_df.drop(columns=drop_cols)
                 # 値列を数値型に変換する
-                if "値" in pandas_df.columns:
-                    pandas_df["値"] = pandas.to_numeric(pandas_df["値"], errors="coerce")
+                if "値" in pd_df.columns:
+                    pd_df["値"] = pd.to_numeric(pd_df["値"], errors="coerce")
             except Exception:
                 # デバッグ
                 self.log.debug(f"error: {_with_csv.__name__}")
@@ -526,7 +525,7 @@ class GetJapanGovernmentStatistics:
                 pass
             finally:
                 pass
-            return pandas_df
+            return pd_df
 
         result: bool = False
         try:
@@ -535,14 +534,14 @@ class GetJapanGovernmentStatistics:
             with httpx.Client(timeout=120.0) as client:
                 match self.lst_of_data_type[self.KEY]:
                     case "xml":
-                        self.pandas_df = _with_xml(client, dct_of_params)
+                        self.pd_df = _with_xml(client, dct_of_params)
                     case "json":
-                        self.pandas_df = _with_json(client, dct_of_params)
+                        self.pd_df = _with_json(client, dct_of_params)
                     case "csv":
-                        self.pandas_df = _with_csv(client, dct_of_params)
+                        self.pd_df = _with_csv(client, dct_of_params)
                     case _:
                         raise Exception("データタイプが対応していません。")
-            self.DATA_COUNT = len(self.pandas_df)
+            self.DATA_COUNT = len(self.pd_df)
         except Exception:
             raise
         else:
@@ -551,131 +550,62 @@ class GetJapanGovernmentStatistics:
             pass
         return result
 
-    # def filter_df(self, df: DataFrame) -> DataFrame:
-    #     """データフレームをフィルターにかけます"""
-    #     filtered_df: DataFrame | None = None
-    #     try:
-    #         match self.lst_of_match_type[self.KEY]:
-    #             case "部分一致":
-    #                 # 全列で部分一致検索する
-    #                 if len(self.lst_of_keyword) == 1:
-    #                     # 単一キーワード
-    #                     kw: str = str(self.lst_of_keyword[0])
-    #                     filtered_df = df[
-    #                         df.apply(
-    #                             lambda row: row.astype(str).str.contains(kw, case=False, na=False).any(),
-    #                             axis=1,
-    #                         )
-    #                     ]
-    #                 else:
-    #                     # 複数キーワード
-    #                     match self.lst_of_logic_type[self.KEY]:
-    #                         case "OR抽出":
-    #                             pattern: str = "|".join(map(str, self.lst_of_keyword))
-    #                             filtered_df = df[
-    #                                 df.apply(
-    #                                     lambda row: row.astype(str).str.contains(pattern, case=False, na=False).any(),
-    #                                     axis=1,
-    #                                 )
-    #                             ]
-    #                         case "AND抽出":
-    #                             filtered_df = df[
-    #                                 df.apply(
-    #                                     lambda row: all(row.astype(str).str.contains(k, case=False, na=False).any() for k in self.lst_of_keyword),
-    #                                     axis=1,
-    #                                 )
-    #                             ]
-    #                         case _:
-    #                             raise Exception("その抽出方法はありません。")
-    #             case "完全一致":
-    #                 # 全列で完全一致検索する
-    #                 if len(self.lst_of_keyword) == 1:
-    #                     # 単一キーワード
-    #                     kw: str = str(self.lst_of_keyword[0])
-    #                     filtered_df = df[df.apply(lambda row: row.astype(str).eq(kw).any(), axis=1)]
-    #                 else:
-    #                     # 複数キーワード
-    #                     match self.lst_of_logic_type[self.KEY]:
-    #                         case "OR抽出":
-    #                             filtered_df = df[
-    #                                 df.apply(
-    #                                     lambda row: row.astype(str).isin(self.lst_of_keyword).any(),
-    #                                     axis=1,
-    #                                 )
-    #                             ]
-    #                         case "AND抽出":
-    #                             filtered_df = df[
-    #                                 df.apply(
-    #                                     lambda row: all(row.astype(str).eq(k).any() for k in self.lst_of_keyword),
-    #                                     axis=1,
-    #                                 )
-    #                             ]
-    #                         case _:
-    #                             raise Exception("その抽出方法はありません。")
-    #             case _:
-    #                 raise Exception("その検索方法はありません。")
-    #         self.DATA_COUNT = len(filtered_df)
-    #     except Exception:
-    #         raise
-    #     else:
-    #         pass
-    #     finally:
-    #         pass
-    #     return filtered_df
-
-    def filter_pandas_df(self, pandas_df: pandas.DataFrame) -> pandas.DataFrame:
-        """データフレームをフィルターにかけます（polars高速版）"""
-        filtered_pandas_df: pandas.DataFrame | None = None
-        filtered_polars_df: polars.LazyFrame | None = None
+    def filter_pd_df(self, pd_df: pd.DataFrame) -> pd.DataFrame:
+        """データフレームをフィルターにかけます"""
+        filtered_pd_df: pd.DataFrame | None = None
+        filtered_pl_df: pl.DataFrame | None = None
+        filtered_pl_lazy_df: pl.LazyFrame | None = None
         try:
             match_type: str = self.lst_of_match_type[self.KEY]
-            keywords: list = list(map(str, self.lst_of_keyword))
             logic_type: str = self.lst_of_logic_type[self.KEY]
+            keywords: list = list(map(str, self.lst_of_keyword))
             # pandas => polars
-            polars_df: polars.LazyFrame = polars.from_pandas(pandas_df).lazy()
+            pl_df: pl.DataFrame = pl.from_pandas(pd_df)
+            pl_lazy_df: pl.LazyFrame = pl_df.lazy()
             # 全列を文字列として扱う
-            str_cols: polars.Expr = polars.all().cast(polars.Utf8)
+            str_cols: pl.Expr = pl.all().cast(pl.Utf8)
             # 部分一致
             if match_type == "部分一致":
-                # --- OR ---
+                # OR
                 if len(keywords) == 1 or logic_type == "OR抽出":
                     pattern: str = "|".join(re.escape(k) for k in keywords)
-                    filtered_polars_df = polars_df.filter(polars.any_horizontal(str_cols.str.contains(f"(?i){pattern}")))
-                # --- AND ---
+                    filtered_pl_lazy_df = pl_lazy_df.filter(pl.any_horizontal(str_cols.str.contains(f"(?i){pattern}")))
+                # AND
                 elif logic_type == "AND抽出":
-                    filtered_polars_df = polars_df.filter(
-                        polars.all_horizontal([polars.any_horizontal(str_cols.str.contains(f"(?i){re.escape(k)}")) for k in keywords])
+                    filtered_pl_lazy_df = pl_lazy_df.filter(
+                        pl.all_horizontal([pl.any_horizontal(str_cols.str.contains(f"(?i){re.escape(k)}")) for k in keywords])
                     )
                 else:
                     raise Exception("その抽出方法はありません。")
             # 完全一致
             elif match_type == "完全一致":
-                # --- OR ---
+                # OR
                 if len(keywords) == 1 or logic_type == "OR抽出":
-                    filtered_polars_df = polars_df.filter(polars.any_horizontal(str_cols.is_in(keywords)))
-                # --- AND ---
+                    filtered_pl_lazy_df = pl_lazy_df.filter(pl.any_horizontal(str_cols.is_in(keywords)))
+                # AND
                 elif logic_type == "AND抽出":
-                    filtered_polars_df = polars_df.filter(polars.all_horizontal([polars.any_horizontal(str_cols.eq(k)) for k in keywords]))
+                    filtered_pl_lazy_df = pl_lazy_df.filter(pl.all_horizontal([pl.any_horizontal(str_cols.eq(k)) for k in keywords]))
                 else:
                     raise Exception("その抽出方法はありません。")
             else:
                 raise Exception("その検索方法はありません。")
             # polars => pandas
-            filtered_pandas_df = filtered_polars_df.collect().to_pandas()
-            self.DATA_COUNT = len(filtered_pandas_df)
+            filtered_pl_df = cast(pl.DataFrame, filtered_pl_lazy_df.collect())
+            filtered_pd_df = filtered_pl_df.to_pandas()
+            self.DATA_COUNT = len(filtered_pd_df)
         except Exception:
             raise
         else:
             pass
         finally:
             pass
-        return filtered_pandas_df
+        return filtered_pd_df
 
     def show_table(self) -> bool:
         """指定の統計表を表示します"""
         result: bool = False
         try:
-            self.log.info(tabulate(self.pandas_df, headers="keys", tablefmt="github", showindex=False))
+            self.log.info(tabulate(self.pd_df, headers="keys", tablefmt="github", showindex=False))
             self.log.info(f"統計表ID => {self.STATS_DATA_ID}")
             self.log.info("データの取得形式 => " + ": ".join(self.lst_of_data_type))
             self.log.info("検索方法 => " + ": ".join(self.lst_of_match_type))
@@ -694,10 +624,12 @@ class GetJapanGovernmentStatistics:
         """指定の統計表をcsvファイルに出力します"""
         result: bool = False
         try:
+            if self.pd_df is None:
+                raise Exception("DataFrameが空です。")
             self.folder_p_of_table.mkdir(parents=True, exist_ok=True)
             file_p_of_table: Path = self.folder_p_of_table / f"stats_table_{self.STATS_DATA_ID}_{self.obj_of_dt2._convert_for_file_name()}.csv"
             file_s_of_table: str = str(file_p_of_table)
-            self.pandas_df.to_csv(file_s_of_table, index=False, encoding="utf-8")
+            self.pd_df.to_csv(file_s_of_table, index=False, encoding="utf-8")
         except Exception:
             raise
         else:
